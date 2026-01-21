@@ -674,9 +674,6 @@
               </div>
 
               <div class="buttons">
-                <button class="secondary" id="autoCropBtn" type="button">
-                  Auto-fit
-                </button>
                 <button class="secondary" id="resetBtn" type="button">
                   Reset
                 </button>
@@ -721,7 +718,7 @@
               </svg>
               Face Position
             </h4>
-            <p>Align your <strong>eyes with the green line</strong>. Your face (chin to crown) should fit within the oval guides (32-36mm).</p>
+            <p>Position your <strong>eyes within the green zone</strong>. Your face (chin to crown) should fit within the oval guides.</p>
           </div>
 
           <div class="guide-section">
@@ -768,7 +765,6 @@
     const changePhotoBtn = document.getElementById("changePhotoBtn");
     const zoomRange = document.getElementById("zoomRange");
     const zoomLabel = document.getElementById("zoomLabel");
-    const autoCropBtn = document.getElementById("autoCropBtn");
     const resetBtn = document.getElementById("resetBtn");
     const downloadBtn = document.getElementById("downloadBtn");
     const statusMsg = document.getElementById("statusMsg");
@@ -778,7 +774,6 @@
     // ==================== Constants ====================
     const TARGET_WIDTH = 413;
     const TARGET_HEIGHT = 531;
-    const TARGET_RATIO = 35 / 45;
     const TARGET_DPI = 300;
     const MAX_BYTES = 1_000_000;
 
@@ -846,61 +841,6 @@
     }
 
     // ==================== Image Processing ====================
-    function centerCropToRatio(sourceCanvas, targetRatio) {
-      const w = sourceCanvas.width;
-      const h = sourceCanvas.height;
-      const currentRatio = w / h;
-
-      let cropX = 0, cropY = 0, cropW = w, cropH = h;
-
-      if (Math.abs(currentRatio - targetRatio) > 0.001) {
-        if (currentRatio > targetRatio) {
-          cropW = Math.round(h * targetRatio);
-          cropX = Math.round((w - cropW) / 2);
-        } else {
-          cropH = Math.round(w / targetRatio);
-          cropY = Math.round((h - cropH) / 2);
-        }
-      }
-
-      const croppedCanvas = document.createElement("canvas");
-      croppedCanvas.width = cropW;
-      croppedCanvas.height = cropH;
-      const croppedCtx = croppedCanvas.getContext("2d");
-      croppedCtx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-
-      return croppedCanvas;
-    }
-
-    function highQualityResize(sourceCanvas, targetWidth, targetHeight) {
-      let currentCanvas = sourceCanvas;
-      let currentWidth = sourceCanvas.width;
-      let currentHeight = sourceCanvas.height;
-
-      while (currentWidth / 2 > targetWidth && currentHeight / 2 > targetHeight) {
-        const halfCanvas = document.createElement("canvas");
-        halfCanvas.width = Math.round(currentWidth / 2);
-        halfCanvas.height = Math.round(currentHeight / 2);
-        const halfCtx = halfCanvas.getContext("2d");
-        halfCtx.imageSmoothingEnabled = true;
-        halfCtx.imageSmoothingQuality = "high";
-        halfCtx.drawImage(currentCanvas, 0, 0, halfCanvas.width, halfCanvas.height);
-        currentCanvas = halfCanvas;
-        currentWidth = halfCanvas.width;
-        currentHeight = halfCanvas.height;
-      }
-
-      const finalCanvas = document.createElement("canvas");
-      finalCanvas.width = targetWidth;
-      finalCanvas.height = targetHeight;
-      const finalCtx = finalCanvas.getContext("2d");
-      finalCtx.imageSmoothingEnabled = true;
-      finalCtx.imageSmoothingQuality = "high";
-      finalCtx.drawImage(currentCanvas, 0, 0, targetWidth, targetHeight);
-
-      return finalCanvas;
-    }
-
     async function patchJpegDpi(blob, dpi) {
       const buffer = await blob.arrayBuffer();
       const data = new Uint8Array(buffer);
@@ -953,23 +893,6 @@
       return { blob: bestBlob, quality: bestQ };
     }
 
-    async function autoProcessImage(imgElement) {
-      // Use stored dimensions or fall back to naturalWidth/Height
-      const imgW = state.imgWidth || imgElement.naturalWidth || imgElement.width;
-      const imgH = state.imgHeight || imgElement.naturalHeight || imgElement.height;
-
-      const sourceCanvas = document.createElement("canvas");
-      sourceCanvas.width = imgW;
-      sourceCanvas.height = imgH;
-      const sourceCtx = sourceCanvas.getContext("2d");
-      sourceCtx.drawImage(imgElement, 0, 0, imgW, imgH);
-
-      const croppedCanvas = centerCropToRatio(sourceCanvas, TARGET_RATIO);
-      const resizedCanvas = highQualityResize(croppedCanvas, TARGET_WIDTH, TARGET_HEIGHT);
-
-      return resizedCanvas;
-    }
-
     // ==================== Drawing ====================
     function drawOverlay(context) {
       const w = context.canvas.width;
@@ -982,19 +905,16 @@
       const faceMinPx = faceMinMm * pxPerMm;
       const faceMaxPx = faceMaxMm * pxPerMm;
 
-      // Eye line at ~35% from top (ICAO standard)
-      const eyeLineFromTop = 0.35;
-      const eyeLineY = h * eyeLineFromTop;
+      // Eye zone: approximately 30-40% from top (allows for variation in face shapes)
+      const eyeZoneTopPct = 0.28;
+      const eyeZoneBottomPct = 0.42;
+      const eyeZoneTop = h * eyeZoneTopPct;
+      const eyeZoneBottom = h * eyeZoneBottomPct;
+      const eyeZoneHeight = eyeZoneBottom - eyeZoneTop;
 
-      // Eyes are typically ~40% down from crown (top of head)
-      // So crown is above eye line by 40% of face height
-      const eyeToCrewnRatio = 0.40;
-      const avgFacePx = (faceMinPx + faceMaxPx) / 2;
-      const crownToEyesPx = avgFacePx * eyeToCrewnRatio;
-
-      // Face oval center: positioned so eyes align with eye line
-      // Eyes are 40% down from top of oval, so center is below eye line
-      const faceCenterY = eyeLineY + (avgFacePx * 0.1); // Slight adjustment for oval center
+      // Face oval center: positioned based on eye zone center
+      const eyeZoneCenter = (eyeZoneTop + eyeZoneBottom) / 2;
+      const faceCenterY = eyeZoneCenter + (faceMaxPx * 0.08);
 
       const centerX = w / 2;
 
@@ -1012,8 +932,8 @@
       context.lineWidth = 2;
       context.strokeRect(1, 1, w - 2, h - 2);
 
-      // Face zone band (between min and max face size)
-      context.fillStyle = "rgba(37, 99, 235, 0.06)";
+      // Face zone fill (subtle)
+      context.fillStyle = "rgba(37, 99, 235, 0.05)";
       context.beginPath();
       context.ellipse(centerX, faceCenterY, outerRx, outerRy, 0, 0, Math.PI * 2);
       context.fill();
@@ -1034,39 +954,41 @@
       context.stroke();
       context.setLineDash([]);
 
-      // Eye line - horizontal guide
-      const eyeLineWidth = outerRx * 1.6;
-      context.strokeStyle = "rgba(16, 185, 129, 0.8)";
-      context.lineWidth = 2;
-      context.beginPath();
-      context.moveTo(centerX - eyeLineWidth / 2, eyeLineY);
-      context.lineTo(centerX + eyeLineWidth / 2, eyeLineY);
-      context.stroke();
+      // Eye zone - gradient band showing acceptable eye position range
+      const eyeZoneWidth = outerRx * 1.5;
+      const eyeZoneLeft = centerX - eyeZoneWidth / 2;
+      const eyeZoneRight = centerX + eyeZoneWidth / 2;
 
-      // Eye markers (two small circles)
-      const eyeSpacing = outerRx * 0.65;
-      const eyeRadius = 4;
+      // Create gradient for eye zone (stronger in middle, fading at edges)
+      const gradient = context.createLinearGradient(0, eyeZoneTop, 0, eyeZoneBottom);
+      gradient.addColorStop(0, "rgba(16, 185, 129, 0.0)");
+      gradient.addColorStop(0.3, "rgba(16, 185, 129, 0.15)");
+      gradient.addColorStop(0.5, "rgba(16, 185, 129, 0.2)");
+      gradient.addColorStop(0.7, "rgba(16, 185, 129, 0.15)");
+      gradient.addColorStop(1, "rgba(16, 185, 129, 0.0)");
 
+      context.fillStyle = gradient;
+      context.fillRect(eyeZoneLeft, eyeZoneTop, eyeZoneWidth, eyeZoneHeight);
+
+      // Dotted rectangle border for eye zone
+      context.strokeStyle = "rgba(16, 185, 129, 0.6)";
+      context.lineWidth = 1.5;
+      context.setLineDash([4, 4]);
+      context.strokeRect(eyeZoneLeft, eyeZoneTop, eyeZoneWidth, eyeZoneHeight);
+      context.setLineDash([]);
+
+      // Eye zone label
       context.fillStyle = "rgba(16, 185, 129, 0.9)";
-      context.beginPath();
-      context.arc(centerX - eyeSpacing / 2, eyeLineY, eyeRadius, 0, Math.PI * 2);
-      context.fill();
-      context.beginPath();
-      context.arc(centerX + eyeSpacing / 2, eyeLineY, eyeRadius, 0, Math.PI * 2);
-      context.fill();
-
-      // Eye line label
-      context.fillStyle = "rgba(16, 185, 129, 1)";
-      context.font = "bold 10px system-ui, sans-serif";
+      context.font = "9px system-ui, sans-serif";
       context.textAlign = "left";
       context.textBaseline = "middle";
-      context.fillText("EYES", centerX + eyeLineWidth / 2 + 6, eyeLineY);
+      context.fillText("eye zone", eyeZoneRight + 6, eyeZoneTop + eyeZoneHeight / 2);
 
       // Face size label
-      context.fillStyle = "rgba(37, 99, 235, 0.8)";
+      context.fillStyle = "rgba(37, 99, 235, 0.7)";
       context.font = "9px system-ui, sans-serif";
       context.textAlign = "center";
-      context.fillText("chin to crown: 32-36mm", centerX, faceCenterY + outerRy + 14);
+      context.fillText("32-36mm", centerX, faceCenterY + outerRy + 12);
 
       context.restore();
     }
@@ -1293,46 +1215,6 @@
       fitImageToCanvas(state.img);
     });
 
-    autoCropBtn.addEventListener("click", async () => {
-      if (!state.img) {
-        setStatus("Please upload a photo first.", "error");
-        return;
-      }
-
-      clearStatus();
-      showLoading("Auto-fitting...");
-
-      // Use setTimeout to allow the loading overlay to render first
-      setTimeout(async () => {
-        try {
-          const processedCanvas = await autoProcessImage(state.img);
-          const dataUrl = processedCanvas.toDataURL("image/png");
-          const newImg = new Image();
-
-          newImg.onload = () => {
-            state.img = newImg;
-            state.imgWidth = newImg.naturalWidth || newImg.width;
-            state.imgHeight = newImg.naturalHeight || newImg.height;
-            state.baseScale = canvas.width / state.imgWidth;
-            state.scale = state.baseScale;
-            state.offsetX = 0;
-            state.offsetY = 0;
-
-            zoomRange.value = 1;
-            zoomLabel.textContent = "1.00x";
-
-            redrawNow();
-            hideLoading();
-            setStatus("Auto-fit complete!", "success");
-          };
-
-          newImg.src = dataUrl;
-        } catch (err) {
-          hideLoading();
-          setStatus("Auto-fit failed: " + err.message, "error");
-        }
-      }, 50);
-    });
 
     downloadBtn.addEventListener("click", async () => {
       if (!state.img) {
