@@ -791,6 +791,8 @@
     // ==================== State ====================
     const state = {
       img: null,
+      imgWidth: 0,
+      imgHeight: 0,
       scale: 1,
       offsetX: 0,
       offsetY: 0,
@@ -800,6 +802,7 @@
       dragStartY: 0,
       dragOffsetX: 0,
       dragOffsetY: 0,
+      needsRender: false,
     };
 
     // ==================== Step Management ====================
@@ -951,11 +954,15 @@
     }
 
     async function autoProcessImage(imgElement) {
+      // Use stored dimensions or fall back to naturalWidth/Height
+      const imgW = state.imgWidth || imgElement.naturalWidth || imgElement.width;
+      const imgH = state.imgHeight || imgElement.naturalHeight || imgElement.height;
+
       const sourceCanvas = document.createElement("canvas");
-      sourceCanvas.width = imgElement.naturalWidth || imgElement.width;
-      sourceCanvas.height = imgElement.naturalHeight || imgElement.height;
+      sourceCanvas.width = imgW;
+      sourceCanvas.height = imgH;
       const sourceCtx = sourceCanvas.getContext("2d");
-      sourceCtx.drawImage(imgElement, 0, 0);
+      sourceCtx.drawImage(imgElement, 0, 0, imgW, imgH);
 
       const croppedCanvas = centerCropToRatio(sourceCanvas, TARGET_RATIO);
       const resizedCanvas = highQualityResize(croppedCanvas, TARGET_WIDTH, TARGET_HEIGHT);
@@ -1028,8 +1035,8 @@
       context.fillRect(0, 0, w, h);
 
       const scale = state.scale;
-      const imgDrawWidth = state.img.width * scale;
-      const imgDrawHeight = state.img.height * scale;
+      const imgDrawWidth = state.imgWidth * scale;
+      const imgDrawHeight = state.imgHeight * scale;
 
       const drawX = w / 2 - imgDrawWidth / 2 + state.offsetX;
       const drawY = h / 2 - imgDrawHeight / 2 + state.offsetY;
@@ -1041,19 +1048,39 @@
       }
     }
 
+    // Throttled redraw using requestAnimationFrame
     function redraw() {
+      if (!state.needsRender) {
+        state.needsRender = true;
+        requestAnimationFrame(() => {
+          render(ctx, true);
+          state.needsRender = false;
+        });
+      }
+    }
+
+    // Immediate redraw for when we need it right away
+    function redrawNow() {
       render(ctx, true);
     }
 
     function fitImageToCanvas(image) {
+      // Use naturalWidth/Height for actual image dimensions
+      const imgW = image.naturalWidth || image.width;
+      const imgH = image.naturalHeight || image.height;
+
+      // Store dimensions in state for fast access
+      state.imgWidth = imgW;
+      state.imgHeight = imgH;
+
       const canvasRatio = canvas.width / canvas.height;
-      const imageRatio = image.width / image.height;
+      const imageRatio = imgW / imgH;
 
       let baseScale;
       if (imageRatio > canvasRatio) {
-        baseScale = canvas.width / image.width;
+        baseScale = canvas.width / imgW;
       } else {
-        baseScale = canvas.height / image.height;
+        baseScale = canvas.height / imgH;
       }
 
       state.baseScale = baseScale;
@@ -1064,7 +1091,7 @@
       zoomRange.value = 1;
       zoomLabel.textContent = "1.00x";
 
-      redraw();
+      redrawNow();
     }
 
     // ==================== File Handling ====================
@@ -1151,6 +1178,9 @@
 
     function startDrag(e) {
       if (!state.img) return;
+      // Only start drag if clicking on canvas area
+      if (e.target !== canvas && e.target !== canvasWrapper) return;
+
       e.preventDefault();
       state.isDragging = true;
       const pos = getPointerPosition(e);
@@ -1172,16 +1202,18 @@
     }
 
     function endDrag() {
-      state.isDragging = false;
-      canvasWrapper.style.cursor = "grab";
+      if (state.isDragging) {
+        state.isDragging = false;
+        canvasWrapper.style.cursor = "grab";
+      }
     }
 
     canvasWrapper.addEventListener("mousedown", startDrag);
     canvasWrapper.addEventListener("touchstart", startDrag, { passive: false });
-    window.addEventListener("mousemove", moveDrag);
-    window.addEventListener("touchmove", moveDrag, { passive: false });
-    window.addEventListener("mouseup", endDrag);
-    window.addEventListener("touchend", endDrag);
+    document.addEventListener("mousemove", moveDrag);
+    document.addEventListener("touchmove", moveDrag, { passive: false });
+    document.addEventListener("mouseup", endDrag);
+    document.addEventListener("touchend", endDrag);
 
     // ==================== Controls ====================
     zoomRange.addEventListener("input", () => {
@@ -1207,31 +1239,36 @@
       clearStatus();
       showLoading("Auto-fitting...");
 
-      try {
-        const processedCanvas = await autoProcessImage(state.img);
-        const dataUrl = processedCanvas.toDataURL("image/png");
-        const newImg = new Image();
+      // Use setTimeout to allow the loading overlay to render first
+      setTimeout(async () => {
+        try {
+          const processedCanvas = await autoProcessImage(state.img);
+          const dataUrl = processedCanvas.toDataURL("image/png");
+          const newImg = new Image();
 
-        newImg.onload = () => {
-          state.img = newImg;
-          state.baseScale = canvas.width / newImg.width;
-          state.scale = state.baseScale;
-          state.offsetX = 0;
-          state.offsetY = 0;
+          newImg.onload = () => {
+            state.img = newImg;
+            state.imgWidth = newImg.naturalWidth || newImg.width;
+            state.imgHeight = newImg.naturalHeight || newImg.height;
+            state.baseScale = canvas.width / state.imgWidth;
+            state.scale = state.baseScale;
+            state.offsetX = 0;
+            state.offsetY = 0;
 
-          zoomRange.value = 1;
-          zoomLabel.textContent = "1.00x";
+            zoomRange.value = 1;
+            zoomLabel.textContent = "1.00x";
 
-          redraw();
+            redrawNow();
+            hideLoading();
+            setStatus("Auto-fit complete!", "success");
+          };
+
+          newImg.src = dataUrl;
+        } catch (err) {
           hideLoading();
-          setStatus("Auto-fit complete!", "success");
-        };
-
-        newImg.src = dataUrl;
-      } catch (err) {
-        hideLoading();
-        setStatus("Auto-fit failed: " + err.message, "error");
-      }
+          setStatus("Auto-fit failed: " + err.message, "error");
+        }
+      }, 50);
     });
 
     downloadBtn.addEventListener("click", async () => {
