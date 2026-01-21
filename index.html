@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ICAO Passport Photo Maker (Simple Overlay)</title>
+  <title>Passport Photo Maker - Free Online Tool</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -223,9 +223,9 @@
 </head>
 <body>
   <div class="app">
-    <h1>ICAO Passport Photo Maker</h1>
+    <h1>Passport Photo Maker</h1>
     <div class="subtitle">
-      Upload a photo, adjust it into the frame, and export a 35&nbsp;mm × 45&nbsp;mm JPEG (&lt; 1&nbsp;MB).
+      Free, private, runs entirely in your browser. Creates 35×45mm photos at 300 DPI, under 1 MB.
     </div>
 
     <div class="layout">
@@ -298,6 +298,9 @@
             <button class="secondary" id="resetBtn" type="button">
               ⟳ Reset view
             </button>
+            <button class="secondary" id="autoCropBtn" type="button">
+              ⚡ Auto-crop
+            </button>
             <button class="primary" id="downloadBtn" type="button">
               ⬇ Download JPEG
             </button>
@@ -310,33 +313,37 @@
         </div>
       </div>
 
-      <!-- Right: Simple legend -->
+      <!-- Right: Instructions -->
       <div class="right">
-        <div class="section-title">2. Where the Face Should Go</div>
+        <div class="section-title">2. How to Use</div>
         <div class="card guidelines">
-          <span class="pill">Simple overlay</span>
+          <span class="pill">Two options</span>
 
           <div class="badge-row">
-            <span class="badge">Photo: 35 × 45 mm</span>
-            <span class="badge">Face height: 32–36 mm</span>
+            <span class="badge">35 × 45 mm</span>
+            <span class="badge">300 DPI</span>
+            <span class="badge">&lt; 1 MB</span>
           </div>
 
-          <p><strong>On the preview:</strong></p>
+          <p><strong>Option A: Auto-crop (recommended)</strong></p>
           <ul>
-            <li>The <strong>outer rectangle</strong> is the final photo area (35 × 45 mm).</li>
-            <li>The <strongsoft>soft oval band</strongsoft> in the middle shows where the face should go.
-              Your chin and the top of your head should fit between the inner and outer ovals
-              (about 32–36 mm total height).</li>
+            <li>Click <strong>Auto-crop</strong> to automatically center-crop and resize your photo to the correct dimensions.</li>
+            <li>Fine-tune with the sliders if needed.</li>
           </ul>
 
-          <p><strong>How to use it:</strong></p>
+          <p><strong>Option B: Manual adjustment</strong></p>
           <ul>
-            <li>Use <strong>Zoom</strong> so your face fills the oval band.</li>
-            <li>Use <strong>Horizontal</strong> and <strong>Vertical</strong> to centre the face in the oval.</li>
+            <li>Use <strong>Zoom</strong> so your face fills the oval guide.</li>
+            <li>Use <strong>Horizontal</strong> and <strong>Vertical</strong> to center your face.</li>
           </ul>
 
-          <p><strong>Note:</strong> The overlay is only a guide and is
-            <em>not</em> included in the downloaded JPEG.</p>
+          <p><strong>The oval guide:</strong></p>
+          <ul>
+            <li>Your face (chin to top of head) should fit within the oval band (32–36 mm height).</li>
+            <li>The guide is <em>not</em> included in the final photo.</li>
+          </ul>
+
+          <p><strong>Privacy:</strong> Your photo never leaves your device. All processing happens locally in your browser.</p>
         </div>
       </div>
     </div>
@@ -352,9 +359,17 @@
     const yRange = document.getElementById("yRange");
     const zoomLabel = document.getElementById("zoomLabel");
     const resetBtn = document.getElementById("resetBtn");
+    const autoCropBtn = document.getElementById("autoCropBtn");
     const downloadBtn = document.getElementById("downloadBtn");
     const outputInfo = document.getElementById("outputInfo");
     const statusMsg = document.getElementById("statusMsg");
+
+    // Target dimensions (matching Python: 35x45mm at 300 DPI)
+    const TARGET_WIDTH = 413;
+    const TARGET_HEIGHT = 531;
+    const TARGET_RATIO = 35 / 45; // 7:9 ≈ 0.777...
+    const TARGET_DPI = 300;
+    const MAX_BYTES = 1_000_000; // 1 MB
 
     // Offscreen canvas for export (no overlay)
     const exportCanvas = document.createElement("canvas");
@@ -368,6 +383,7 @@
       offsetX: 0,
       offsetY: 0,
       baseScale: 1,
+      originalFile: null, // Store original file for auto-crop
     };
 
     function clearStatus() {
@@ -379,6 +395,163 @@
       statusMsg.textContent = msg;
       statusMsg.classList.toggle("error", isError);
     }
+
+    // ========== Python-equivalent functions ==========
+
+    /**
+     * Center-crop image to target aspect ratio (like Python's center_crop_to_ratio)
+     * Returns a new canvas with the cropped image
+     */
+    function centerCropToRatio(sourceCanvas, targetRatio) {
+      const w = sourceCanvas.width;
+      const h = sourceCanvas.height;
+      const currentRatio = w / h;
+
+      let cropX = 0, cropY = 0, cropW = w, cropH = h;
+
+      if (Math.abs(currentRatio - targetRatio) > 0.001) {
+        if (currentRatio > targetRatio) {
+          // Image is too wide: crop width
+          cropW = Math.round(h * targetRatio);
+          cropX = Math.round((w - cropW) / 2);
+        } else {
+          // Image is too tall: crop height
+          cropH = Math.round(w / targetRatio);
+          cropY = Math.round((h - cropH) / 2);
+        }
+      }
+
+      const croppedCanvas = document.createElement("canvas");
+      croppedCanvas.width = cropW;
+      croppedCanvas.height = cropH;
+      const croppedCtx = croppedCanvas.getContext("2d");
+      croppedCtx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      return croppedCanvas;
+    }
+
+    /**
+     * High-quality resize using step-down scaling (better than single-step resize)
+     * Mimics PIL's LANCZOS quality by reducing in 50% steps
+     */
+    function highQualityResize(sourceCanvas, targetWidth, targetHeight) {
+      let currentCanvas = sourceCanvas;
+      let currentWidth = sourceCanvas.width;
+      let currentHeight = sourceCanvas.height;
+
+      // Step down by halves until we're close to target size
+      while (currentWidth / 2 > targetWidth && currentHeight / 2 > targetHeight) {
+        const halfCanvas = document.createElement("canvas");
+        halfCanvas.width = Math.round(currentWidth / 2);
+        halfCanvas.height = Math.round(currentHeight / 2);
+        const halfCtx = halfCanvas.getContext("2d");
+        halfCtx.imageSmoothingEnabled = true;
+        halfCtx.imageSmoothingQuality = "high";
+        halfCtx.drawImage(currentCanvas, 0, 0, halfCanvas.width, halfCanvas.height);
+        currentCanvas = halfCanvas;
+        currentWidth = halfCanvas.width;
+        currentHeight = halfCanvas.height;
+      }
+
+      // Final resize to exact target dimensions
+      const finalCanvas = document.createElement("canvas");
+      finalCanvas.width = targetWidth;
+      finalCanvas.height = targetHeight;
+      const finalCtx = finalCanvas.getContext("2d");
+      finalCtx.imageSmoothingEnabled = true;
+      finalCtx.imageSmoothingQuality = "high";
+      finalCtx.drawImage(currentCanvas, 0, 0, targetWidth, targetHeight);
+
+      return finalCanvas;
+    }
+
+    /**
+     * Patch JPEG blob to set DPI in JFIF header (300 DPI)
+     * JFIF APP0 marker contains density at specific byte offsets
+     */
+    async function patchJpegDpi(blob, dpi) {
+      const buffer = await blob.arrayBuffer();
+      const data = new Uint8Array(buffer);
+
+      // Look for JFIF APP0 marker (FF E0)
+      for (let i = 0; i < data.length - 20; i++) {
+        if (data[i] === 0xFF && data[i + 1] === 0xE0) {
+          // Check for "JFIF\0" identifier
+          if (data[i + 4] === 0x4A && data[i + 5] === 0x46 &&
+              data[i + 6] === 0x49 && data[i + 7] === 0x46 && data[i + 8] === 0x00) {
+            // Found JFIF marker
+            // Byte 11: density units (1 = dots per inch)
+            data[i + 11] = 1;
+            // Bytes 12-13: X density (big-endian)
+            data[i + 12] = (dpi >> 8) & 0xFF;
+            data[i + 13] = dpi & 0xFF;
+            // Bytes 14-15: Y density (big-endian)
+            data[i + 14] = (dpi >> 8) & 0xFF;
+            data[i + 15] = dpi & 0xFF;
+            break;
+          }
+        }
+      }
+
+      return new Blob([data], { type: "image/jpeg" });
+    }
+
+    /**
+     * Binary search for optimal JPEG quality under max size (like Python's save_jpeg_under_size)
+     */
+    async function findOptimalQuality(canvas, maxBytes) {
+      let lowQ = 0.30;
+      let highQ = 0.95;
+      let bestBlob = null;
+      let bestQ = null;
+
+      while (highQ - lowQ > 0.02) {
+        const q = (lowQ + highQ) / 2;
+        const blob = await new Promise(resolve => {
+          canvas.toBlob(resolve, "image/jpeg", q);
+        });
+
+        if (blob.size <= maxBytes) {
+          bestBlob = blob;
+          bestQ = q;
+          lowQ = q + 0.01;
+        } else {
+          highQ = q - 0.01;
+        }
+      }
+
+      // If nothing fit, use lowest quality
+      if (!bestBlob) {
+        bestBlob = await new Promise(resolve => {
+          canvas.toBlob(resolve, "image/jpeg", 0.30);
+        });
+        bestQ = 0.30;
+      }
+
+      return { blob: bestBlob, quality: bestQ };
+    }
+
+    /**
+     * Full auto-process: center crop + resize + optimize (like Python's process_image)
+     */
+    async function autoProcessImage(imgElement) {
+      // Draw original image to a canvas
+      const sourceCanvas = document.createElement("canvas");
+      sourceCanvas.width = imgElement.naturalWidth || imgElement.width;
+      sourceCanvas.height = imgElement.naturalHeight || imgElement.height;
+      const sourceCtx = sourceCanvas.getContext("2d");
+      sourceCtx.drawImage(imgElement, 0, 0);
+
+      // 1. Center-crop to 7:9 ratio
+      const croppedCanvas = centerCropToRatio(sourceCanvas, TARGET_RATIO);
+
+      // 2. High-quality resize to target dimensions
+      const resizedCanvas = highQualityResize(croppedCanvas, TARGET_WIDTH, TARGET_HEIGHT);
+
+      return resizedCanvas;
+    }
+
+    // ========== End Python-equivalent functions ==========
 
     function drawEmptyPlaceholder() {
       ctx.fillStyle = "#e5e7eb";
@@ -535,9 +708,12 @@
       const file = event.target.files[0];
       if (!file) {
         state.img = null;
+        state.originalFile = null;
         drawEmptyPlaceholder();
         return;
       }
+
+      state.originalFile = file;
 
       const img = new Image();
       img.onload = () => {
@@ -547,6 +723,7 @@
       img.onerror = () => {
         setStatus("Could not load image. Please try another file.", true);
         state.img = null;
+        state.originalFile = null;
         drawEmptyPlaceholder();
       };
       img.src = URL.createObjectURL(file);
@@ -581,6 +758,47 @@
       fitImageToCanvas(state.img);
     });
 
+    // Auto-crop button: applies Python-like automatic processing
+    autoCropBtn.addEventListener("click", async () => {
+      clearStatus();
+      if (!state.img) {
+        setStatus("Please upload a photo first.", true);
+        return;
+      }
+
+      setStatus("Processing...");
+
+      try {
+        // Run auto-process (center crop + high-quality resize)
+        const processedCanvas = await autoProcessImage(state.img);
+
+        // Create a new image from the processed canvas
+        const dataUrl = processedCanvas.toDataURL("image/png");
+        const newImg = new Image();
+
+        newImg.onload = () => {
+          state.img = newImg;
+          // Set scale so image fills canvas exactly
+          state.baseScale = canvas.width / newImg.width;
+          state.scale = state.baseScale;
+          state.offsetX = 0;
+          state.offsetY = 0;
+
+          zoomRange.value = 1;
+          xRange.value = 0;
+          yRange.value = 0;
+          zoomLabel.textContent = "1.00×";
+
+          redraw();
+          setStatus("Auto-crop complete. Image is now 35×45mm at 300 DPI.");
+        };
+
+        newImg.src = dataUrl;
+      } catch (err) {
+        setStatus("Auto-crop failed: " + err.message, true);
+      }
+    });
+
     function canvasToBlobFromExport(quality) {
       return new Promise((resolve) => {
         exportCanvas.toBlob(
@@ -598,44 +816,41 @@
         return;
       }
 
+      setStatus("Generating JPEG...");
+
       // Render image only (no overlay) to offscreen canvas
       render(exportCtx, false, false);
 
-      let quality = 0.9;
-      let blob = await canvasToBlobFromExport(quality);
+      // Use binary search to find optimal quality (like Python)
+      const { blob: optimizedBlob, quality } = await findOptimalQuality(exportCanvas, MAX_BYTES);
 
-      const maxBytes = 1_000_000;
-      const minQuality = 0.4;
-
-      while (blob && blob.size > maxBytes && quality > minQuality) {
-        quality -= 0.07;
-        blob = await canvasToBlobFromExport(quality);
-      }
-
-      if (!blob) {
+      if (!optimizedBlob) {
         setStatus("Failed to export image.", true);
         return;
       }
 
-      const sizeKB = (blob.size / 1024).toFixed(0);
-      outputInfo.textContent =
-        `Output: 413×531 px JPEG — approx ${sizeKB} KB (quality ${quality.toFixed(2)}).`;
+      // Patch JPEG with 300 DPI metadata
+      const finalBlob = await patchJpegDpi(optimizedBlob, TARGET_DPI);
 
-      if (blob.size > maxBytes) {
+      const sizeKB = (finalBlob.size / 1024).toFixed(0);
+      outputInfo.textContent =
+        `Output: ${TARGET_WIDTH}×${TARGET_HEIGHT} px JPEG @ ${TARGET_DPI} DPI — ${sizeKB} KB (quality ${(quality * 100).toFixed(0)}%)`;
+
+      if (finalBlob.size > MAX_BYTES) {
         setStatus(
           "Warning: Could not reach < 1 MB even at lower quality, but this should still be acceptable.",
           true
         );
       } else {
-        setStatus("JPEG generated successfully and under 1 MB.");
+        setStatus(`JPEG saved: ${sizeKB} KB with 300 DPI metadata.`);
       }
 
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(finalBlob);
       const a = document.createElement("a");
       const timestamp = new Date().toISOString().replace(/[:-]/g, "").split(".")[0];
 
       a.href = url;
-      a.download = `icao_passport_photo_${timestamp}.jpg`;
+      a.download = `passport_photo_${timestamp}.jpg`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
