@@ -4,108 +4,344 @@
   <meta charset="UTF-8" />
   <title>Passport Photo Maker - Free Online Tool</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Free passport photo maker. Creates ICAO-compliant 35x45mm photos at 300 DPI. Runs entirely in your browser - your photos never leave your device." />
   <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
     :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-      background: #f5f5f7;
-      color: #111827;
+      --color-primary: #2563eb;
+      --color-primary-hover: #1d4ed8;
+      --color-success: #059669;
+      --color-success-bg: #ecfdf5;
+      --color-error: #dc2626;
+      --color-gray-50: #f9fafb;
+      --color-gray-100: #f3f4f6;
+      --color-gray-200: #e5e7eb;
+      --color-gray-300: #d1d5db;
+      --color-gray-400: #9ca3af;
+      --color-gray-500: #6b7280;
+      --color-gray-600: #4b5563;
+      --color-gray-700: #374151;
+      --color-gray-900: #111827;
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1rem;
+      --radius-full: 999px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 30px rgba(15,23,42,0.1);
     }
 
     body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--color-gray-50);
+      color: var(--color-gray-900);
       margin: 0;
-      padding: 1.5rem;
-      display: flex;
-      justify-content: center;
+      padding: 1rem;
+      min-height: 100vh;
     }
 
     .app {
       width: 100%;
-      max-width: 960px;
-      background: #ffffff;
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
       padding: 1.5rem;
-      border-radius: 1rem;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-      box-sizing: border-box;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
     }
 
-    h1 {
-      font-size: 1.4rem;
-      margin: 0 0 0.4rem;
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
 
-    .subtitle {
-      font-size: 0.9rem;
-      color: #6b7280;
-      margin-bottom: 1rem;
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      color: var(--color-gray-900);
     }
 
+    .privacy-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--color-success-bg);
+      color: var(--color-success);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .privacy-banner svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Steps indicator */
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.75rem;
+      background: var(--color-gray-100);
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      color: var(--color-gray-600);
+      transition: all 0.2s ease;
+    }
+
+    .step.active {
+      background: var(--color-primary);
+      color: #fff;
+    }
+
+    .step.completed {
+      background: var(--color-success-bg);
+      color: var(--color-success);
+    }
+
+    .step-number {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: currentColor;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .step.active .step-number,
+    .step.completed .step-number {
+      background: rgba(255,255,255,0.25);
+      color: inherit;
+    }
+
+    /* Layout */
     .layout {
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
     }
 
-    @media (min-width: 800px) {
+    @media (min-width: 768px) {
       .layout {
         flex-direction: row;
+        align-items: flex-start;
+      }
+
+      .editor {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .sidebar {
+        width: 280px;
+        flex-shrink: 0;
       }
     }
 
-    .left,
-    .right {
-      flex: 1;
-      min-width: 0;
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed var(--color-gray-300);
+      border-radius: var(--radius-md);
+      padding: 2rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--color-gray-50);
     }
 
-    .section-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--color-primary);
+      background: #eff6ff;
     }
 
-    .card {
-      border-radius: 0.75rem;
-      border: 1px solid #e5e7eb;
-      padding: 0.75rem 1rem;
-      background: #fafafa;
+    .drop-zone.has-image {
+      padding: 0.75rem;
+      border-style: solid;
+      border-color: var(--color-gray-200);
+      background: #fff;
     }
 
-    .file-input-wrapper {
+    .drop-zone-content {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
+      align-items: center;
+      gap: 0.75rem;
     }
 
-    input[type="file"] {
-      font-size: 0.9rem;
+    .drop-zone.has-image .drop-zone-content {
+      display: none;
     }
 
-    .hint {
+    .drop-zone-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--color-gray-400);
+    }
+
+    .drop-zone-text {
+      font-size: 0.95rem;
+      color: var(--color-gray-600);
+    }
+
+    .drop-zone-text strong {
+      color: var(--color-primary);
+    }
+
+    .drop-zone-hint {
       font-size: 0.8rem;
-      color: #6b7280;
+      color: var(--color-gray-400);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    /* Canvas area */
+    .canvas-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .drop-zone.has-image .canvas-container {
+      display: flex;
     }
 
     .canvas-wrapper {
       position: relative;
       width: 100%;
-      max-width: 340px;
-      margin: 0.75rem auto 0;
-      border-radius: 0.75rem;
-      background: #e5e7eb;
+      max-width: 300px;
+      border-radius: var(--radius-md);
       overflow: hidden;
-      border: 1px solid #d1d5db;
+      box-shadow: var(--shadow-md);
+      cursor: grab;
+      touch-action: none;
     }
 
-    canvas {
+    .canvas-wrapper:active {
+      cursor: grabbing;
+    }
+
+    .canvas-wrapper canvas {
       display: block;
       width: 100%;
       height: auto;
     }
 
+    /* Loading overlay */
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .loading-overlay.visible {
+      display: flex;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--color-gray-200);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 0.85rem;
+      color: var(--color-gray-600);
+    }
+
+    /* Success overlay */
+    .success-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .success-overlay.visible {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .success-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--color-success);
+      animation: scaleIn 0.3s ease;
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .success-text {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-success);
+    }
+
+    .change-photo-btn {
+      font-size: 0.8rem;
+      color: var(--color-primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0.25rem;
+    }
+
+    .change-photo-btn:hover {
+      color: var(--color-primary-hover);
+    }
+
+    /* Controls */
     .controls {
-      margin-top: 0.75rem;
+      width: 100%;
+      max-width: 300px;
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
@@ -114,294 +350,499 @@
     .control-row {
       display: flex;
       flex-direction: column;
-      gap: 0.2rem;
+      gap: 0.25rem;
     }
 
     .control-row label {
       font-size: 0.8rem;
-      color: #374151;
+      color: var(--color-gray-600);
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
 
-    input[type="range"] {
+    .control-row input[type="range"] {
       width: 100%;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--color-gray-200);
+      border-radius: 3px;
+      outline: none;
     }
 
+    .control-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--color-primary);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .control-row input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+
+    .control-row input[type="range"]:focus {
+      outline: none;
+    }
+
+    .control-row input[type="range"]:focus-visible::-webkit-slider-thumb {
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+    }
+
+    .control-hint {
+      font-size: 0.75rem;
+      color: var(--color-gray-400);
+      text-align: center;
+      margin-top: 0.25rem;
+    }
+
+    /* Buttons */
     .buttons {
-      margin-top: 0.75rem;
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
+      justify-content: center;
+      margin-top: 0.5rem;
     }
 
     button {
-      border-radius: 999px;
+      font-family: inherit;
+      border-radius: var(--radius-full);
       border: none;
-      padding: 0.45rem 0.9rem;
+      padding: 0.6rem 1.1rem;
       font-size: 0.9rem;
+      font-weight: 500;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
-      transition: transform 0.05s ease, box-shadow 0.1s ease,
-        background 0.15s ease;
-      white-space: nowrap;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+      min-height: 44px;
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
     }
 
     button.primary {
-      background: #2563eb;
-      color: #ffffff;
-      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+      background: var(--color-primary);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
     }
 
     button.primary:hover {
-      background: #1d4ed8;
+      background: var(--color-primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    button.primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
     }
 
     button.secondary {
-      background: #e5e7eb;
-      color: #111827;
+      background: var(--color-gray-100);
+      color: var(--color-gray-700);
     }
 
-    button:active {
-      transform: translateY(1px);
-      box-shadow: none;
+    button.secondary:hover {
+      background: var(--color-gray-200);
     }
 
-    .output-info {
-      font-size: 0.8rem;
-      color: #4b5563;
-      margin-top: 0.4rem;
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
     }
 
-    .guidelines {
-      font-size: 0.8rem;
-      line-height: 1.4;
-    }
-
-    .guidelines ul {
-      padding-left: 1.1rem;
-      margin: 0.4rem 0;
-    }
-
-    .pill {
-      display: inline-block;
-      font-size: 0.75rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 999px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      margin-bottom: 0.35rem;
-    }
-
-    .badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.3rem;
-      margin: 0.2rem 0 0.5rem;
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 999px;
-      background: #f3f4f6;
-      color: #374151;
-    }
-
+    /* Status */
     .status {
-      margin-top: 0.5rem;
+      text-align: center;
       font-size: 0.8rem;
-      color: #10b981;
+      min-height: 1.2rem;
+      margin-top: 0.5rem;
+    }
+
+    .status.success {
+      color: var(--color-success);
     }
 
     .status.error {
-      color: #dc2626;
+      color: var(--color-error);
+    }
+
+    .output-info {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--color-gray-400);
+      margin-top: 0.25rem;
+    }
+
+    /* Sidebar */
+    .sidebar-card {
+      background: var(--color-gray-50);
+      border: 1px solid var(--color-gray-200);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+
+    .sidebar-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+      color: var(--color-gray-900);
+    }
+
+    .spec-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .spec-badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      background: #fff;
+      border: 1px solid var(--color-gray-200);
+      border-radius: var(--radius-full);
+      color: var(--color-gray-600);
+    }
+
+    .guide-section {
+      margin-bottom: 1rem;
+    }
+
+    .guide-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .guide-section h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin: 0 0 0.4rem;
+      color: var(--color-gray-700);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .guide-section p {
+      font-size: 0.8rem;
+      color: var(--color-gray-500);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-gray-200);
+      font-size: 0.75rem;
+      color: var(--color-gray-400);
+    }
+
+    .footer a {
+      color: var(--color-gray-500);
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 767px) {
+      body {
+        padding: 0.75rem;
+      }
+
+      .app {
+        padding: 1rem;
+      }
+
+      .header h1 {
+        font-size: 1.25rem;
+      }
+
+      .steps {
+        gap: 0.4rem;
+      }
+
+      .step {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+      }
+
+      .sidebar {
+        order: -1;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <h1>Passport Photo Maker</h1>
-    <div class="subtitle">
-      Free, private, runs entirely in your browser. Creates 35×45mm photos at 300 DPI, under 1 MB.
-    </div>
+    <!-- Header -->
+    <header class="header">
+      <h1>Passport Photo Maker</h1>
+      <div class="privacy-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        100% Private - Your photo never leaves your device
+      </div>
+    </header>
 
+    <!-- Steps -->
+    <nav class="steps" role="navigation" aria-label="Progress">
+      <div class="step active" id="step1" data-step="1">
+        <span class="step-number">1</span>
+        Upload
+      </div>
+      <div class="step" id="step2" data-step="2">
+        <span class="step-number">2</span>
+        Adjust
+      </div>
+      <div class="step" id="step3" data-step="3">
+        <span class="step-number">3</span>
+        Download
+      </div>
+    </nav>
+
+    <!-- Main layout -->
     <div class="layout">
-      <!-- Left: Editor -->
-      <div class="left">
-        <div class="section-title">1. Upload &amp; Adjust</div>
-        <div class="card">
-          <div class="file-input-wrapper">
-            <input
-              type="file"
-              id="fileInput"
-              accept="image/*"
-            />
-            <div class="hint">
-              Use a photo with a plain light background, facing the camera directly.
+      <!-- Editor -->
+      <main class="editor">
+        <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Upload photo">
+          <div class="drop-zone-content">
+            <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <div class="drop-zone-text">
+              <strong>Click to upload</strong> or drag and drop
             </div>
+            <div class="drop-zone-hint">PNG, JPG up to 10MB</div>
           </div>
 
-          <div class="canvas-wrapper">
-            <!-- Fixed resolution canvas: 413×531 px ≈ 35×45 mm at ~300 dpi -->
-            <canvas id="photoCanvas" width="413" height="531"></canvas>
-          </div>
-
-          <div class="controls">
-            <div class="control-row">
-              <label for="zoomRange">
-                Zoom
-                <span id="zoomLabel"></span>
-              </label>
-              <input
-                type="range"
-                id="zoomRange"
-                min="0.5"
-                max="3"
-                step="0.01"
-                value="1"
-              />
+          <div class="canvas-container">
+            <div class="canvas-wrapper" id="canvasWrapper">
+              <canvas id="photoCanvas" width="413" height="531"></canvas>
+              <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div class="loading-text" id="loadingText">Processing...</div>
+              </div>
+              <div class="success-overlay" id="successOverlay">
+                <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <div class="success-text">Photo Downloaded!</div>
+              </div>
             </div>
 
-            <div class="control-row">
-              <label for="xRange">
-                Horizontal (move left / right)
-              </label>
-              <input
-                type="range"
-                id="xRange"
-                min="-250"
-                max="250"
-                step="1"
-                value="0"
-              />
-            </div>
-
-            <div class="control-row">
-              <label for="yRange">
-                Vertical (move up / down)
-              </label>
-              <input
-                type="range"
-                id="yRange"
-                min="-250"
-                max="250"
-                step="1"
-                value="0"
-              />
-            </div>
-          </div>
-
-          <div class="buttons">
-            <button class="secondary" id="resetBtn" type="button">
-              ⟳ Reset view
+            <button class="change-photo-btn" id="changePhotoBtn" type="button">
+              Change photo
             </button>
-            <button class="secondary" id="autoCropBtn" type="button">
-              ⚡ Auto-crop
-            </button>
-            <button class="primary" id="downloadBtn" type="button">
-              ⬇ Download JPEG
-            </button>
+
+            <div class="controls" id="controls">
+              <div class="control-row">
+                <label for="zoomRange">
+                  Zoom
+                  <span id="zoomLabel">1.00x</span>
+                </label>
+                <input
+                  type="range"
+                  id="zoomRange"
+                  min="0.5"
+                  max="3"
+                  step="0.01"
+                  value="1"
+                  aria-describedby="zoomHint"
+                />
+              </div>
+
+              <div class="control-hint" id="zoomHint">
+                Drag the photo to reposition, or use slider to zoom
+              </div>
+
+              <div class="buttons">
+                <button class="secondary" id="autoCropBtn" type="button">
+                  Auto-fit
+                </button>
+                <button class="secondary" id="resetBtn" type="button">
+                  Reset
+                </button>
+                <button class="primary" id="downloadBtn" type="button">
+                  Download JPEG
+                </button>
+              </div>
+
+              <div class="status" id="statusMsg" role="status" aria-live="polite"></div>
+              <div class="output-info" id="outputInfo">35x45mm | 300 DPI | Under 1 MB</div>
+            </div>
           </div>
 
-          <div class="output-info" id="outputInfo">
-            Output: 35×45 mm (413×531 px, JPEG, &lt; 1 MB target)
-          </div>
-          <div class="status" id="statusMsg"></div>
+          <input
+            type="file"
+            id="fileInput"
+            class="file-input"
+            accept="image/*"
+            capture="environment"
+          />
         </div>
-      </div>
+      </main>
 
-      <!-- Right: Instructions -->
-      <div class="right">
-        <div class="section-title">2. How to Use</div>
-        <div class="card guidelines">
-          <span class="pill">Two options</span>
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-card">
+          <h3 class="sidebar-title">Photo Specifications</h3>
 
-          <div class="badge-row">
-            <span class="badge">35 × 45 mm</span>
-            <span class="badge">300 DPI</span>
-            <span class="badge">&lt; 1 MB</span>
+          <div class="spec-badges">
+            <span class="spec-badge">35 x 45 mm</span>
+            <span class="spec-badge">300 DPI</span>
+            <span class="spec-badge">JPEG</span>
+            <span class="spec-badge">&lt; 1 MB</span>
           </div>
 
-          <p><strong>Option A: Auto-crop (recommended)</strong></p>
-          <ul>
-            <li>Click <strong>Auto-crop</strong> to automatically center-crop and resize your photo to the correct dimensions.</li>
-            <li>Fine-tune with the sliders if needed.</li>
-          </ul>
+          <div class="guide-section">
+            <h4>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4"/>
+                <path d="M12 8h.01"/>
+              </svg>
+              Face Position
+            </h4>
+            <p>Center your face in the oval guide. Your head (chin to crown) should fill 70-80% of the frame height.</p>
+          </div>
 
-          <p><strong>Option B: Manual adjustment</strong></p>
-          <ul>
-            <li>Use <strong>Zoom</strong> so your face fills the oval guide.</li>
-            <li>Use <strong>Horizontal</strong> and <strong>Vertical</strong> to center your face.</li>
-          </ul>
+          <div class="guide-section">
+            <h4>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+              </svg>
+              Photo Tips
+            </h4>
+            <p>Use a plain light background, face the camera directly, keep a neutral expression, and ensure even lighting.</p>
+          </div>
 
-          <p><strong>The oval guide:</strong></p>
-          <ul>
-            <li>Your face (chin to top of head) should fit within the oval band (32–36 mm height).</li>
-            <li>The guide is <em>not</em> included in the final photo.</li>
-          </ul>
-
-          <p><strong>Privacy:</strong> Your photo never leaves your device. All processing happens locally in your browser.</p>
+          <div class="guide-section">
+            <h4>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              Your Privacy
+            </h4>
+            <p>This tool runs entirely in your browser. Your photos are never uploaded to any server.</p>
+          </div>
         </div>
-      </div>
+      </aside>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      ICAO/ISO compliant passport photo format
+    </footer>
   </div>
 
   <script>
+    // ==================== DOM Elements ====================
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
     const canvas = document.getElementById("photoCanvas");
     const ctx = canvas.getContext("2d");
-
-    const fileInput = document.getElementById("fileInput");
+    const canvasWrapper = document.getElementById("canvasWrapper");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const loadingText = document.getElementById("loadingText");
+    const successOverlay = document.getElementById("successOverlay");
+    const changePhotoBtn = document.getElementById("changePhotoBtn");
     const zoomRange = document.getElementById("zoomRange");
-    const xRange = document.getElementById("xRange");
-    const yRange = document.getElementById("yRange");
     const zoomLabel = document.getElementById("zoomLabel");
-    const resetBtn = document.getElementById("resetBtn");
     const autoCropBtn = document.getElementById("autoCropBtn");
+    const resetBtn = document.getElementById("resetBtn");
     const downloadBtn = document.getElementById("downloadBtn");
-    const outputInfo = document.getElementById("outputInfo");
     const statusMsg = document.getElementById("statusMsg");
+    const outputInfo = document.getElementById("outputInfo");
+    const steps = document.querySelectorAll(".step");
 
-    // Target dimensions (matching Python: 35x45mm at 300 DPI)
+    // ==================== Constants ====================
     const TARGET_WIDTH = 413;
     const TARGET_HEIGHT = 531;
-    const TARGET_RATIO = 35 / 45; // 7:9 ≈ 0.777...
+    const TARGET_RATIO = 35 / 45;
     const TARGET_DPI = 300;
-    const MAX_BYTES = 1_000_000; // 1 MB
+    const MAX_BYTES = 1_000_000;
 
-    // Offscreen canvas for export (no overlay)
+    // Offscreen canvas for export
     const exportCanvas = document.createElement("canvas");
     const exportCtx = exportCanvas.getContext("2d");
-    exportCanvas.width = canvas.width;
-    exportCanvas.height = canvas.height;
+    exportCanvas.width = TARGET_WIDTH;
+    exportCanvas.height = TARGET_HEIGHT;
 
+    // ==================== State ====================
     const state = {
       img: null,
       scale: 1,
       offsetX: 0,
       offsetY: 0,
       baseScale: 1,
-      originalFile: null, // Store original file for auto-crop
+      isDragging: false,
+      dragStartX: 0,
+      dragStartY: 0,
+      dragOffsetX: 0,
+      dragOffsetY: 0,
     };
 
+    // ==================== Step Management ====================
+    function setStep(stepNum) {
+      steps.forEach((step, i) => {
+        const num = i + 1;
+        step.classList.remove("active", "completed");
+        if (num < stepNum) {
+          step.classList.add("completed");
+        } else if (num === stepNum) {
+          step.classList.add("active");
+        }
+      });
+    }
+
+    // ==================== Status & Loading ====================
     function clearStatus() {
       statusMsg.textContent = "";
-      statusMsg.classList.remove("error");
+      statusMsg.className = "status";
     }
 
-    function setStatus(msg, isError = false) {
+    function setStatus(msg, type = "info") {
       statusMsg.textContent = msg;
-      statusMsg.classList.toggle("error", isError);
+      statusMsg.className = `status ${type}`;
     }
 
-    // ========== Python-equivalent functions ==========
+    function showLoading(text = "Processing...") {
+      loadingText.textContent = text;
+      loadingOverlay.classList.add("visible");
+    }
 
-    /**
-     * Center-crop image to target aspect ratio (like Python's center_crop_to_ratio)
-     * Returns a new canvas with the cropped image
-     */
+    function hideLoading() {
+      loadingOverlay.classList.remove("visible");
+    }
+
+    function showSuccess() {
+      successOverlay.classList.add("visible");
+      setTimeout(() => {
+        successOverlay.classList.remove("visible");
+      }, 2000);
+    }
+
+    // ==================== Image Processing ====================
     function centerCropToRatio(sourceCanvas, targetRatio) {
       const w = sourceCanvas.width;
       const h = sourceCanvas.height;
@@ -411,11 +852,9 @@
 
       if (Math.abs(currentRatio - targetRatio) > 0.001) {
         if (currentRatio > targetRatio) {
-          // Image is too wide: crop width
           cropW = Math.round(h * targetRatio);
           cropX = Math.round((w - cropW) / 2);
         } else {
-          // Image is too tall: crop height
           cropH = Math.round(w / targetRatio);
           cropY = Math.round((h - cropH) / 2);
         }
@@ -430,16 +869,11 @@
       return croppedCanvas;
     }
 
-    /**
-     * High-quality resize using step-down scaling (better than single-step resize)
-     * Mimics PIL's LANCZOS quality by reducing in 50% steps
-     */
     function highQualityResize(sourceCanvas, targetWidth, targetHeight) {
       let currentCanvas = sourceCanvas;
       let currentWidth = sourceCanvas.width;
       let currentHeight = sourceCanvas.height;
 
-      // Step down by halves until we're close to target size
       while (currentWidth / 2 > targetWidth && currentHeight / 2 > targetHeight) {
         const halfCanvas = document.createElement("canvas");
         halfCanvas.width = Math.round(currentWidth / 2);
@@ -453,7 +887,6 @@
         currentHeight = halfCanvas.height;
       }
 
-      // Final resize to exact target dimensions
       const finalCanvas = document.createElement("canvas");
       finalCanvas.width = targetWidth;
       finalCanvas.height = targetHeight;
@@ -465,27 +898,17 @@
       return finalCanvas;
     }
 
-    /**
-     * Patch JPEG blob to set DPI in JFIF header (300 DPI)
-     * JFIF APP0 marker contains density at specific byte offsets
-     */
     async function patchJpegDpi(blob, dpi) {
       const buffer = await blob.arrayBuffer();
       const data = new Uint8Array(buffer);
 
-      // Look for JFIF APP0 marker (FF E0)
       for (let i = 0; i < data.length - 20; i++) {
         if (data[i] === 0xFF && data[i + 1] === 0xE0) {
-          // Check for "JFIF\0" identifier
           if (data[i + 4] === 0x4A && data[i + 5] === 0x46 &&
               data[i + 6] === 0x49 && data[i + 7] === 0x46 && data[i + 8] === 0x00) {
-            // Found JFIF marker
-            // Byte 11: density units (1 = dots per inch)
             data[i + 11] = 1;
-            // Bytes 12-13: X density (big-endian)
             data[i + 12] = (dpi >> 8) & 0xFF;
             data[i + 13] = dpi & 0xFF;
-            // Bytes 14-15: Y density (big-endian)
             data[i + 14] = (dpi >> 8) & 0xFF;
             data[i + 15] = dpi & 0xFF;
             break;
@@ -496,9 +919,6 @@
       return new Blob([data], { type: "image/jpeg" });
     }
 
-    /**
-     * Binary search for optimal JPEG quality under max size (like Python's save_jpeg_under_size)
-     */
     async function findOptimalQuality(canvas, maxBytes) {
       let lowQ = 0.30;
       let highQ = 0.95;
@@ -520,7 +940,6 @@
         }
       }
 
-      // If nothing fit, use lowest quality
       if (!bestBlob) {
         bestBlob = await new Promise(resolve => {
           canvas.toBlob(resolve, "image/jpeg", 0.30);
@@ -531,144 +950,91 @@
       return { blob: bestBlob, quality: bestQ };
     }
 
-    /**
-     * Full auto-process: center crop + resize + optimize (like Python's process_image)
-     */
     async function autoProcessImage(imgElement) {
-      // Draw original image to a canvas
       const sourceCanvas = document.createElement("canvas");
       sourceCanvas.width = imgElement.naturalWidth || imgElement.width;
       sourceCanvas.height = imgElement.naturalHeight || imgElement.height;
       const sourceCtx = sourceCanvas.getContext("2d");
       sourceCtx.drawImage(imgElement, 0, 0);
 
-      // 1. Center-crop to 7:9 ratio
       const croppedCanvas = centerCropToRatio(sourceCanvas, TARGET_RATIO);
-
-      // 2. High-quality resize to target dimensions
       const resizedCanvas = highQualityResize(croppedCanvas, TARGET_WIDTH, TARGET_HEIGHT);
 
       return resizedCanvas;
     }
 
-    // ========== End Python-equivalent functions ==========
-
-    function drawEmptyPlaceholder() {
-      ctx.fillStyle = "#e5e7eb";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = "#9ca3af";
-      ctx.font = "14px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI'";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("Upload a photo to begin", canvas.width / 2, canvas.height / 2);
-
-      drawOverlay(ctx);
-    }
-
-    // Simple oval overlay indicating 32–36 mm face-height zone
+    // ==================== Drawing ====================
     function drawOverlay(context) {
       const w = context.canvas.width;
       const h = context.canvas.height;
 
-      const PHOTO_HEIGHT_MM = 45;
-      const pxPerMm = h / PHOTO_HEIGHT_MM;
-
-      const FACE_MIN_MM = 32;
-      const FACE_MAX_MM = 36;
-
-      const faceMinPx = FACE_MIN_MM * pxPerMm;
-      const faceMaxPx = FACE_MAX_MM * pxPerMm;
+      const pxPerMm = h / 45;
+      const faceMinPx = 32 * pxPerMm;
+      const faceMaxPx = 36 * pxPerMm;
 
       const centerX = w / 2;
       const centerY = h / 2;
 
-      // Approximate face width as ~70% of height
       const ratio = 0.7;
       const outerRy = faceMaxPx / 2;
       const outerRx = outerRy * ratio;
-      const innerRy = faceMinPx / 2;
-      const innerRx = innerRy * ratio;
 
       context.save();
 
-      // Outer border (whole photo area)
-      context.strokeStyle = "rgba(31, 41, 55, 0.9)";
+      // Border
+      context.strokeStyle = "rgba(31, 41, 55, 0.8)";
       context.lineWidth = 2;
       context.strokeRect(1, 1, w - 2, h - 2);
 
-      // Soft band between outer and inner ellipse
-      context.beginPath();
-      context.ellipse(centerX, centerY, outerRx, outerRy, 0, 0, Math.PI * 2);
-      context.closePath();
-
-      context.save();
-      context.clip();
-
-      context.beginPath();
-      context.ellipse(centerX, centerY, innerRx, innerRy, 0, 0, Math.PI * 2);
-      context.closePath();
-
-      context.globalCompositeOperation = "destination-out";
-      context.fillStyle = "rgba(0,0,0,1)";
-      context.fill();
-
-      context.restore();
-
-      context.fillStyle = "rgba(56, 189, 248, 0.16)";
+      // Oval guide
+      context.fillStyle = "rgba(37, 99, 235, 0.08)";
       context.beginPath();
       context.ellipse(centerX, centerY, outerRx, outerRy, 0, 0, Math.PI * 2);
       context.fill();
 
-      // Ellipse outline
-      context.strokeStyle = "rgba(37, 99, 235, 0.9)";
+      context.strokeStyle = "rgba(37, 99, 235, 0.6)";
       context.lineWidth = 1.5;
-      context.beginPath();
-      context.ellipse(centerX, centerY, outerRx, outerRy, 0, 0, Math.PI * 2);
+      context.setLineDash([4, 4]);
       context.stroke();
-
-      // Label
-      context.fillStyle = "rgba(31, 41, 55, 0.9)";
-      context.font =
-        "10px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI'";
-      context.textAlign = "center";
-      context.fillText(
-        "Face area (32–36 mm tall)",
-        centerX,
-        centerY - outerRy - 10
-      );
+      context.setLineDash([]);
 
       context.restore();
     }
 
-    function render(context, includeOverlay, showPlaceholderIfEmpty) {
+    function drawEmptyPlaceholder() {
+      ctx.fillStyle = "#f3f4f6";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "14px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Your photo will appear here", canvas.width / 2, canvas.height / 2);
+
+      drawOverlay(ctx);
+    }
+
+    function render(context, includeOverlay) {
       const w = context.canvas.width;
       const h = context.canvas.height;
       context.clearRect(0, 0, w, h);
 
       if (!state.img) {
-        if (showPlaceholderIfEmpty && context === ctx) {
-          drawEmptyPlaceholder();
-        }
+        if (context === ctx) drawEmptyPlaceholder();
         return;
       }
 
-      // White background
       context.fillStyle = "#ffffff";
       context.fillRect(0, 0, w, h);
 
-      const img = state.img;
       const scale = state.scale;
-      const imgDrawWidth = img.width * scale;
-      const imgDrawHeight = img.height * scale;
+      const imgDrawWidth = state.img.width * scale;
+      const imgDrawHeight = state.img.height * scale;
 
-      const centerX = w / 2;
-      const centerY = h / 2;
+      const drawX = w / 2 - imgDrawWidth / 2 + state.offsetX;
+      const drawY = h / 2 - imgDrawHeight / 2 + state.offsetY;
 
-      const drawX = centerX - imgDrawWidth / 2 + state.offsetX;
-      const drawY = centerY - imgDrawHeight / 2 + state.offsetY;
-
-      context.drawImage(img, drawX, drawY, imgDrawWidth, imgDrawHeight);
+      context.drawImage(state.img, drawX, drawY, imgDrawWidth, imgDrawHeight);
 
       if (includeOverlay) {
         drawOverlay(context);
@@ -676,7 +1042,7 @@
     }
 
     function redraw() {
-      render(ctx, true, true);
+      render(ctx, true);
     }
 
     function fitImageToCanvas(image) {
@@ -696,170 +1062,224 @@
       state.offsetY = 0;
 
       zoomRange.value = 1;
-      xRange.value = 0;
-      yRange.value = 0;
-      zoomLabel.textContent = "1.00×";
+      zoomLabel.textContent = "1.00x";
 
       redraw();
     }
 
-    fileInput.addEventListener("change", (event) => {
-      clearStatus();
-      const file = event.target.files[0];
-      if (!file) {
-        state.img = null;
-        state.originalFile = null;
-        drawEmptyPlaceholder();
+    // ==================== File Handling ====================
+    function loadImage(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        setStatus("Please select an image file.", "error");
         return;
       }
 
-      state.originalFile = file;
+      if (file.size > 10 * 1024 * 1024) {
+        setStatus("Image too large. Please use an image under 10MB.", "error");
+        return;
+      }
+
+      clearStatus();
+      showLoading("Loading image...");
 
       const img = new Image();
       img.onload = () => {
         state.img = img;
+        dropZone.classList.add("has-image");
         fitImageToCanvas(img);
+        hideLoading();
+        setStep(2);
       };
       img.onerror = () => {
-        setStatus("Could not load image. Please try another file.", true);
-        state.img = null;
-        state.originalFile = null;
-        drawEmptyPlaceholder();
+        setStatus("Could not load image. Please try another file.", "error");
+        hideLoading();
       };
       img.src = URL.createObjectURL(file);
+    }
+
+    // ==================== Drag & Drop ====================
+    dropZone.addEventListener("click", (e) => {
+      if (!dropZone.classList.contains("has-image") || e.target === changePhotoBtn) {
+        fileInput.click();
+      }
     });
 
+    dropZone.addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " ") && !dropZone.classList.contains("has-image")) {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("drag-over");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("drag-over");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      const file = e.dataTransfer.files[0];
+      if (file) loadImage(file);
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) loadImage(file);
+      fileInput.value = "";
+    });
+
+    changePhotoBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      fileInput.click();
+    });
+
+    // ==================== Canvas Drag to Pan ====================
+    function getPointerPosition(e) {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function startDrag(e) {
+      if (!state.img) return;
+      e.preventDefault();
+      state.isDragging = true;
+      const pos = getPointerPosition(e);
+      state.dragStartX = pos.x;
+      state.dragStartY = pos.y;
+      state.dragOffsetX = state.offsetX;
+      state.dragOffsetY = state.offsetY;
+      canvasWrapper.style.cursor = "grabbing";
+    }
+
+    function moveDrag(e) {
+      if (!state.isDragging) return;
+      e.preventDefault();
+      const pos = getPointerPosition(e);
+      const scaleRatio = canvas.width / canvasWrapper.offsetWidth;
+      state.offsetX = state.dragOffsetX + (pos.x - state.dragStartX) * scaleRatio;
+      state.offsetY = state.dragOffsetY + (pos.y - state.dragStartY) * scaleRatio;
+      redraw();
+    }
+
+    function endDrag() {
+      state.isDragging = false;
+      canvasWrapper.style.cursor = "grab";
+    }
+
+    canvasWrapper.addEventListener("mousedown", startDrag);
+    canvasWrapper.addEventListener("touchstart", startDrag, { passive: false });
+    window.addEventListener("mousemove", moveDrag);
+    window.addEventListener("touchmove", moveDrag, { passive: false });
+    window.addEventListener("mouseup", endDrag);
+    window.addEventListener("touchend", endDrag);
+
+    // ==================== Controls ====================
     zoomRange.addEventListener("input", () => {
       if (!state.img) return;
       const multiplier = parseFloat(zoomRange.value);
       state.scale = state.baseScale * multiplier;
-      zoomLabel.textContent = multiplier.toFixed(2) + "×";
-      redraw();
-    });
-
-    xRange.addEventListener("input", () => {
-      if (!state.img) return;
-      state.offsetX = parseFloat(xRange.value);
-      redraw();
-    });
-
-    yRange.addEventListener("input", () => {
-      if (!state.img) return;
-      state.offsetY = parseFloat(yRange.value);
+      zoomLabel.textContent = multiplier.toFixed(2) + "x";
       redraw();
     });
 
     resetBtn.addEventListener("click", () => {
+      if (!state.img) return;
       clearStatus();
-      if (!state.img) {
-        drawEmptyPlaceholder();
-        return;
-      }
       fitImageToCanvas(state.img);
     });
 
-    // Auto-crop button: applies Python-like automatic processing
     autoCropBtn.addEventListener("click", async () => {
-      clearStatus();
       if (!state.img) {
-        setStatus("Please upload a photo first.", true);
+        setStatus("Please upload a photo first.", "error");
         return;
       }
 
-      setStatus("Processing...");
+      clearStatus();
+      showLoading("Auto-fitting...");
 
       try {
-        // Run auto-process (center crop + high-quality resize)
         const processedCanvas = await autoProcessImage(state.img);
-
-        // Create a new image from the processed canvas
         const dataUrl = processedCanvas.toDataURL("image/png");
         const newImg = new Image();
 
         newImg.onload = () => {
           state.img = newImg;
-          // Set scale so image fills canvas exactly
           state.baseScale = canvas.width / newImg.width;
           state.scale = state.baseScale;
           state.offsetX = 0;
           state.offsetY = 0;
 
           zoomRange.value = 1;
-          xRange.value = 0;
-          yRange.value = 0;
-          zoomLabel.textContent = "1.00×";
+          zoomLabel.textContent = "1.00x";
 
           redraw();
-          setStatus("Auto-crop complete. Image is now 35×45mm at 300 DPI.");
+          hideLoading();
+          setStatus("Auto-fit complete!", "success");
         };
 
         newImg.src = dataUrl;
       } catch (err) {
-        setStatus("Auto-crop failed: " + err.message, true);
+        hideLoading();
+        setStatus("Auto-fit failed: " + err.message, "error");
       }
     });
 
-    function canvasToBlobFromExport(quality) {
-      return new Promise((resolve) => {
-        exportCanvas.toBlob(
-          (blob) => resolve(blob),
-          "image/jpeg",
-          quality
-        );
-      });
-    }
-
-    async function downloadImage() {
-      clearStatus();
+    downloadBtn.addEventListener("click", async () => {
       if (!state.img) {
-        setStatus("Please upload and adjust a photo first.", true);
+        setStatus("Please upload a photo first.", "error");
         return;
       }
 
-      setStatus("Generating JPEG...");
+      clearStatus();
+      showLoading("Generating JPEG...");
+      setStep(3);
 
-      // Render image only (no overlay) to offscreen canvas
-      render(exportCtx, false, false);
+      try {
+        render(exportCtx, false);
+        const { blob: optimizedBlob, quality } = await findOptimalQuality(exportCanvas, MAX_BYTES);
 
-      // Use binary search to find optimal quality (like Python)
-      const { blob: optimizedBlob, quality } = await findOptimalQuality(exportCanvas, MAX_BYTES);
+        if (!optimizedBlob) {
+          throw new Error("Failed to generate image");
+        }
 
-      if (!optimizedBlob) {
-        setStatus("Failed to export image.", true);
-        return;
+        const finalBlob = await patchJpegDpi(optimizedBlob, TARGET_DPI);
+        const sizeKB = (finalBlob.size / 1024).toFixed(0);
+
+        outputInfo.textContent = `${TARGET_WIDTH}x${TARGET_HEIGHT}px | ${TARGET_DPI} DPI | ${sizeKB} KB`;
+
+        const url = URL.createObjectURL(finalBlob);
+        const a = document.createElement("a");
+        const timestamp = new Date().toISOString().replace(/[:-]/g, "").split(".")[0];
+
+        a.href = url;
+        a.download = `passport_photo_${timestamp}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        hideLoading();
+        showSuccess();
+        setStatus("Photo downloaded successfully!", "success");
+
+      } catch (err) {
+        hideLoading();
+        setStatus("Download failed: " + err.message, "error");
+        setStep(2);
       }
+    });
 
-      // Patch JPEG with 300 DPI metadata
-      const finalBlob = await patchJpegDpi(optimizedBlob, TARGET_DPI);
-
-      const sizeKB = (finalBlob.size / 1024).toFixed(0);
-      outputInfo.textContent =
-        `Output: ${TARGET_WIDTH}×${TARGET_HEIGHT} px JPEG @ ${TARGET_DPI} DPI — ${sizeKB} KB (quality ${(quality * 100).toFixed(0)}%)`;
-
-      if (finalBlob.size > MAX_BYTES) {
-        setStatus(
-          "Warning: Could not reach < 1 MB even at lower quality, but this should still be acceptable.",
-          true
-        );
-      } else {
-        setStatus(`JPEG saved: ${sizeKB} KB with 300 DPI metadata.`);
-      }
-
-      const url = URL.createObjectURL(finalBlob);
-      const a = document.createElement("a");
-      const timestamp = new Date().toISOString().replace(/[:-]/g, "").split(".")[0];
-
-      a.href = url;
-      a.download = `passport_photo_${timestamp}.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    downloadBtn.addEventListener("click", downloadImage);
-
-    // Initial placeholder
+    // ==================== Initialize ====================
     drawEmptyPlaceholder();
   </script>
 </body>
