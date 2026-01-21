@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ICAO Passport Photo Maker (Simple Overlay)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: #f5f5f7;
+      color: #111827;
+    }
+
+    body {
+      margin: 0;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 960px;
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      box-sizing: border-box;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 0.4rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 1rem;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 800px) {
+      .layout {
+        flex-direction: row;
+      }
+    }
+
+    .left,
+    .right {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .card {
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
+      padding: 0.75rem 1rem;
+      background: #fafafa;
+    }
+
+    .file-input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    input[type="file"] {
+      font-size: 0.9rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      margin: 0.75rem auto 0;
+      border-radius: 0.75rem;
+      background: #e5e7eb;
+      overflow: hidden;
+      border: 1px solid #d1d5db;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .controls {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .control-row label {
+      font-size: 0.8rem;
+      color: #374151;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .buttons {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: transform 0.05s ease, box-shadow 0.1s ease,
+        background 0.15s ease;
+      white-space: nowrap;
+    }
+
+    button.primary {
+      background: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+    }
+
+    button.primary:hover {
+      background: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    .output-info {
+      font-size: 0.8rem;
+      color: #4b5563;
+      margin-top: 0.4rem;
+    }
+
+    .guidelines {
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .guidelines ul {
+      padding-left: 1.1rem;
+      margin: 0.4rem 0;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      margin-bottom: 0.35rem;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 0.2rem 0 0.5rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .status {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #10b981;
+    }
+
+    .status.error {
+      color: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>ICAO Passport Photo Maker</h1>
+    <div class="subtitle">
+      Upload a photo, adjust it into the frame, and export a 35&nbsp;mm × 45&nbsp;mm JPEG (&lt; 1&nbsp;MB).
+    </div>
+
+    <div class="layout">
+      <!-- Left: Editor -->
+      <div class="left">
+        <div class="section-title">1. Upload &amp; Adjust</div>
+        <div class="card">
+          <div class="file-input-wrapper">
+            <input
+              type="file"
+              id="fileInput"
+              accept="image/*"
+            />
+            <div class="hint">
+              Use a photo with a plain light background, facing the camera directly.
+            </div>
+          </div>
+
+          <div class="canvas-wrapper">
+            <!-- Fixed resolution canvas: 413×531 px ≈ 35×45 mm at ~300 dpi -->
+            <canvas id="photoCanvas" width="413" height="531"></canvas>
+          </div>
+
+          <div class="controls">
+            <div class="control-row">
+              <label for="zoomRange">
+                Zoom
+                <span id="zoomLabel"></span>
+              </label>
+              <input
+                type="range"
+                id="zoomRange"
+                min="0.5"
+                max="3"
+                step="0.01"
+                value="1"
+              />
+            </div>
+
+            <div class="control-row">
+              <label for="xRange">
+                Horizontal (move left / right)
+              </label>
+              <input
+                type="range"
+                id="xRange"
+                min="-250"
+                max="250"
+                step="1"
+                value="0"
+              />
+            </div>
+
+            <div class="control-row">
+              <label for="yRange">
+                Vertical (move up / down)
+              </label>
+              <input
+                type="range"
+                id="yRange"
+                min="-250"
+                max="250"
+                step="1"
+                value="0"
+              />
+            </div>
+          </div>
+
+          <div class="buttons">
+            <button class="secondary" id="resetBtn" type="button">
+              ⟳ Reset view
+            </button>
+            <button class="primary" id="downloadBtn" type="button">
+              ⬇ Download JPEG
+            </button>
+          </div>
+
+          <div class="output-info" id="outputInfo">
+            Output: 35×45 mm (413×531 px, JPEG, &lt; 1 MB target)
+          </div>
+          <div class="status" id="statusMsg"></div>
+        </div>
+      </div>
+
+      <!-- Right: Simple legend -->
+      <div class="right">
+        <div class="section-title">2. Where the Face Should Go</div>
+        <div class="card guidelines">
+          <span class="pill">Simple overlay</span>
+
+          <div class="badge-row">
+            <span class="badge">Photo: 35 × 45 mm</span>
+            <span class="badge">Face height: 32–36 mm</span>
+          </div>
+
+          <p><strong>On the preview:</strong></p>
+          <ul>
+            <li>The <strong>outer rectangle</strong> is the final photo area (35 × 45 mm).</li>
+            <li>The <strongsoft>soft oval band</strongsoft> in the middle shows where the face should go.
+              Your chin and the top of your head should fit between the inner and outer ovals
+              (about 32–36 mm total height).</li>
+          </ul>
+
+          <p><strong>How to use it:</strong></p>
+          <ul>
+            <li>Use <strong>Zoom</strong> so your face fills the oval band.</li>
+            <li>Use <strong>Horizontal</strong> and <strong>Vertical</strong> to centre the face in the oval.</li>
+          </ul>
+
+          <p><strong>Note:</strong> The overlay is only a guide and is
+            <em>not</em> included in the downloaded JPEG.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("photoCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const fileInput = document.getElementById("fileInput");
+    const zoomRange = document.getElementById("zoomRange");
+    const xRange = document.getElementById("xRange");
+    const yRange = document.getElementById("yRange");
+    const zoomLabel = document.getElementById("zoomLabel");
+    const resetBtn = document.getElementById("resetBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const outputInfo = document.getElementById("outputInfo");
+    const statusMsg = document.getElementById("statusMsg");
+
+    // Offscreen canvas for export (no overlay)
+    const exportCanvas = document.createElement("canvas");
+    const exportCtx = exportCanvas.getContext("2d");
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+
+    const state = {
+      img: null,
+      scale: 1,
+      offsetX: 0,
+      offsetY: 0,
+      baseScale: 1,
+    };
+
+    function clearStatus() {
+      statusMsg.textContent = "";
+      statusMsg.classList.remove("error");
+    }
+
+    function setStatus(msg, isError = false) {
+      statusMsg.textContent = msg;
+      statusMsg.classList.toggle("error", isError);
+    }
+
+    function drawEmptyPlaceholder() {
+      ctx.fillStyle = "#e5e7eb";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "14px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI'";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Upload a photo to begin", canvas.width / 2, canvas.height / 2);
+
+      drawOverlay(ctx);
+    }
+
+    // Simple oval overlay indicating 32–36 mm face-height zone
+    function drawOverlay(context) {
+      const w = context.canvas.width;
+      const h = context.canvas.height;
+
+      const PHOTO_HEIGHT_MM = 45;
+      const pxPerMm = h / PHOTO_HEIGHT_MM;
+
+      const FACE_MIN_MM = 32;
+      const FACE_MAX_MM = 36;
+
+      const faceMinPx = FACE_MIN_MM * pxPerMm;
+      const faceMaxPx = FACE_MAX_MM * pxPerMm;
+
+      const centerX = w / 2;
+      const centerY = h / 2;
+
+      // Approximate face width as ~70% of height
+      const ratio = 0.7;
+      const outerRy = faceMaxPx / 2;
+      const outerRx = outerRy * ratio;
+      const innerRy = faceMinPx / 2;
+      const innerRx = innerRy * ratio;
+
+      context.save();
+
+      // Outer border (whole photo area)
+      context.strokeStyle = "rgba(31, 41, 55, 0.9)";
+      context.lineWidth = 2;
+      context.strokeRect(1, 1, w - 2, h - 2);
+
+      // Soft band between outer and inner ellipse
+      context.beginPath();
+      context.ellipse(centerX, centerY, outerRx, outerRy, 0, 0, Math.PI * 2);
+      context.closePath();
+
+      context.save();
+      context.clip();
+
+      context.beginPath();
+      context.ellipse(centerX, centerY, innerRx, innerRy, 0, 0, Math.PI * 2);
+      context.closePath();
+
+      context.globalCompositeOperation = "destination-out";
+      context.fillStyle = "rgba(0,0,0,1)";
+      context.fill();
+
+      context.restore();
+
+      context.fillStyle = "rgba(56, 189, 248, 0.16)";
+      context.beginPath();
+      context.ellipse(centerX, centerY, outerRx, outerRy, 0, 0, Math.PI * 2);
+      context.fill();
+
+      // Ellipse outline
+      context.strokeStyle = "rgba(37, 99, 235, 0.9)";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.ellipse(centerX, centerY, outerRx, outerRy, 0, 0, Math.PI * 2);
+      context.stroke();
+
+      // Label
+      context.fillStyle = "rgba(31, 41, 55, 0.9)";
+      context.font =
+        "10px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI'";
+      context.textAlign = "center";
+      context.fillText(
+        "Face area (32–36 mm tall)",
+        centerX,
+        centerY - outerRy - 10
+      );
+
+      context.restore();
+    }
+
+    function render(context, includeOverlay, showPlaceholderIfEmpty) {
+      const w = context.canvas.width;
+      const h = context.canvas.height;
+      context.clearRect(0, 0, w, h);
+
+      if (!state.img) {
+        if (showPlaceholderIfEmpty && context === ctx) {
+          drawEmptyPlaceholder();
+        }
+        return;
+      }
+
+      // White background
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, w, h);
+
+      const img = state.img;
+      const scale = state.scale;
+      const imgDrawWidth = img.width * scale;
+      const imgDrawHeight = img.height * scale;
+
+      const centerX = w / 2;
+      const centerY = h / 2;
+
+      const drawX = centerX - imgDrawWidth / 2 + state.offsetX;
+      const drawY = centerY - imgDrawHeight / 2 + state.offsetY;
+
+      context.drawImage(img, drawX, drawY, imgDrawWidth, imgDrawHeight);
+
+      if (includeOverlay) {
+        drawOverlay(context);
+      }
+    }
+
+    function redraw() {
+      render(ctx, true, true);
+    }
+
+    function fitImageToCanvas(image) {
+      const canvasRatio = canvas.width / canvas.height;
+      const imageRatio = image.width / image.height;
+
+      let baseScale;
+      if (imageRatio > canvasRatio) {
+        baseScale = canvas.width / image.width;
+      } else {
+        baseScale = canvas.height / image.height;
+      }
+
+      state.baseScale = baseScale;
+      state.scale = baseScale;
+      state.offsetX = 0;
+      state.offsetY = 0;
+
+      zoomRange.value = 1;
+      xRange.value = 0;
+      yRange.value = 0;
+      zoomLabel.textContent = "1.00×";
+
+      redraw();
+    }
+
+    fileInput.addEventListener("change", (event) => {
+      clearStatus();
+      const file = event.target.files[0];
+      if (!file) {
+        state.img = null;
+        drawEmptyPlaceholder();
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        state.img = img;
+        fitImageToCanvas(img);
+      };
+      img.onerror = () => {
+        setStatus("Could not load image. Please try another file.", true);
+        state.img = null;
+        drawEmptyPlaceholder();
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+    zoomRange.addEventListener("input", () => {
+      if (!state.img) return;
+      const multiplier = parseFloat(zoomRange.value);
+      state.scale = state.baseScale * multiplier;
+      zoomLabel.textContent = multiplier.toFixed(2) + "×";
+      redraw();
+    });
+
+    xRange.addEventListener("input", () => {
+      if (!state.img) return;
+      state.offsetX = parseFloat(xRange.value);
+      redraw();
+    });
+
+    yRange.addEventListener("input", () => {
+      if (!state.img) return;
+      state.offsetY = parseFloat(yRange.value);
+      redraw();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      clearStatus();
+      if (!state.img) {
+        drawEmptyPlaceholder();
+        return;
+      }
+      fitImageToCanvas(state.img);
+    });
+
+    function canvasToBlobFromExport(quality) {
+      return new Promise((resolve) => {
+        exportCanvas.toBlob(
+          (blob) => resolve(blob),
+          "image/jpeg",
+          quality
+        );
+      });
+    }
+
+    async function downloadImage() {
+      clearStatus();
+      if (!state.img) {
+        setStatus("Please upload and adjust a photo first.", true);
+        return;
+      }
+
+      // Render image only (no overlay) to offscreen canvas
+      render(exportCtx, false, false);
+
+      let quality = 0.9;
+      let blob = await canvasToBlobFromExport(quality);
+
+      const maxBytes = 1_000_000;
+      const minQuality = 0.4;
+
+      while (blob && blob.size > maxBytes && quality > minQuality) {
+        quality -= 0.07;
+        blob = await canvasToBlobFromExport(quality);
+      }
+
+      if (!blob) {
+        setStatus("Failed to export image.", true);
+        return;
+      }
+
+      const sizeKB = (blob.size / 1024).toFixed(0);
+      outputInfo.textContent =
+        `Output: 413×531 px JPEG — approx ${sizeKB} KB (quality ${quality.toFixed(2)}).`;
+
+      if (blob.size > maxBytes) {
+        setStatus(
+          "Warning: Could not reach < 1 MB even at lower quality, but this should still be acceptable.",
+          true
+        );
+      } else {
+        setStatus("JPEG generated successfully and under 1 MB.");
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const timestamp = new Date().toISOString().replace(/[:-]/g, "").split(".")[0];
+
+      a.href = url;
+      a.download = `icao_passport_photo_${timestamp}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    downloadBtn.addEventListener("click", downloadImage);
+
+    // Initial placeholder
+    drawEmptyPlaceholder();
+  </script>
+</body>
+</html>
