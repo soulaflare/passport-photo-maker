@@ -721,7 +721,7 @@
               </svg>
               Face Position
             </h4>
-            <p>Center your face in the oval guide. Your head (chin to crown) should fill 70-80% of the frame height.</p>
+            <p>Align your <strong>eyes with the green line</strong>. Your face (chin to crown) should fit within the oval guides (32-36mm).</p>
           </div>
 
           <div class="guide-section">
@@ -975,35 +975,98 @@
       const w = context.canvas.width;
       const h = context.canvas.height;
 
+      // ICAO measurements (photo is 45mm tall)
       const pxPerMm = h / 45;
-      const faceMinPx = 32 * pxPerMm;
-      const faceMaxPx = 36 * pxPerMm;
+      const faceMinMm = 32;
+      const faceMaxMm = 36;
+      const faceMinPx = faceMinMm * pxPerMm;
+      const faceMaxPx = faceMaxMm * pxPerMm;
+
+      // Eye line at ~35% from top (ICAO standard)
+      const eyeLineFromTop = 0.35;
+      const eyeLineY = h * eyeLineFromTop;
+
+      // Eyes are typically ~40% down from crown (top of head)
+      // So crown is above eye line by 40% of face height
+      const eyeToCrewnRatio = 0.40;
+      const avgFacePx = (faceMinPx + faceMaxPx) / 2;
+      const crownToEyesPx = avgFacePx * eyeToCrewnRatio;
+
+      // Face oval center: positioned so eyes align with eye line
+      // Eyes are 40% down from top of oval, so center is below eye line
+      const faceCenterY = eyeLineY + (avgFacePx * 0.1); // Slight adjustment for oval center
 
       const centerX = w / 2;
-      const centerY = h / 2;
 
-      const ratio = 0.7;
+      // Face oval dimensions (width ~70% of height)
+      const widthRatio = 0.7;
       const outerRy = faceMaxPx / 2;
-      const outerRx = outerRy * ratio;
+      const outerRx = outerRy * widthRatio;
+      const innerRy = faceMinPx / 2;
+      const innerRx = innerRy * widthRatio;
 
       context.save();
 
-      // Border
+      // Photo border
       context.strokeStyle = "rgba(31, 41, 55, 0.8)";
       context.lineWidth = 2;
       context.strokeRect(1, 1, w - 2, h - 2);
 
-      // Oval guide
-      context.fillStyle = "rgba(37, 99, 235, 0.08)";
+      // Face zone band (between min and max face size)
+      context.fillStyle = "rgba(37, 99, 235, 0.06)";
       context.beginPath();
-      context.ellipse(centerX, centerY, outerRx, outerRy, 0, 0, Math.PI * 2);
+      context.ellipse(centerX, faceCenterY, outerRx, outerRy, 0, 0, Math.PI * 2);
       context.fill();
 
-      context.strokeStyle = "rgba(37, 99, 235, 0.6)";
+      // Outer oval (max face size - 36mm)
+      context.strokeStyle = "rgba(37, 99, 235, 0.5)";
       context.lineWidth = 1.5;
-      context.setLineDash([4, 4]);
+      context.setLineDash([6, 4]);
+      context.beginPath();
+      context.ellipse(centerX, faceCenterY, outerRx, outerRy, 0, 0, Math.PI * 2);
+      context.stroke();
+
+      // Inner oval (min face size - 32mm)
+      context.strokeStyle = "rgba(37, 99, 235, 0.3)";
+      context.lineWidth = 1;
+      context.beginPath();
+      context.ellipse(centerX, faceCenterY, innerRx, innerRy, 0, 0, Math.PI * 2);
       context.stroke();
       context.setLineDash([]);
+
+      // Eye line - horizontal guide
+      const eyeLineWidth = outerRx * 1.6;
+      context.strokeStyle = "rgba(16, 185, 129, 0.8)";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(centerX - eyeLineWidth / 2, eyeLineY);
+      context.lineTo(centerX + eyeLineWidth / 2, eyeLineY);
+      context.stroke();
+
+      // Eye markers (two small circles)
+      const eyeSpacing = outerRx * 0.65;
+      const eyeRadius = 4;
+
+      context.fillStyle = "rgba(16, 185, 129, 0.9)";
+      context.beginPath();
+      context.arc(centerX - eyeSpacing / 2, eyeLineY, eyeRadius, 0, Math.PI * 2);
+      context.fill();
+      context.beginPath();
+      context.arc(centerX + eyeSpacing / 2, eyeLineY, eyeRadius, 0, Math.PI * 2);
+      context.fill();
+
+      // Eye line label
+      context.fillStyle = "rgba(16, 185, 129, 1)";
+      context.font = "bold 10px system-ui, sans-serif";
+      context.textAlign = "left";
+      context.textBaseline = "middle";
+      context.fillText("EYES", centerX + eyeLineWidth / 2 + 6, eyeLineY);
+
+      // Face size label
+      context.fillStyle = "rgba(37, 99, 235, 0.8)";
+      context.font = "9px system-ui, sans-serif";
+      context.textAlign = "center";
+      context.fillText("chin to crown: 32-36mm", centerX, faceCenterY + outerRy + 14);
 
       context.restore();
     }
