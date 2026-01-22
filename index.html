@@ -84,6 +84,73 @@
       flex-shrink: 0;
     }
 
+    /* Photo size selector */
+    .size-selector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .size-selector-label {
+      font-size: 0.75rem;
+      color: var(--color-gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .size-options {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .size-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      border: 2px solid var(--color-gray-200);
+      border-radius: var(--radius-md);
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-width: 90px;
+    }
+
+    .size-option:hover {
+      border-color: var(--color-gray-300);
+      background: var(--color-gray-50);
+    }
+
+    .size-option.active {
+      border-color: var(--color-primary);
+      background: #eff6ff;
+    }
+
+    .size-option-country {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-gray-900);
+    }
+
+    .size-option.active .size-option-country {
+      color: var(--color-primary);
+    }
+
+    .size-option-dims {
+      font-size: 0.7rem;
+      color: var(--color-gray-500);
+      margin-top: 0.15rem;
+    }
+
+    .size-option-flag {
+      font-size: 1.1rem;
+      margin-bottom: 0.2rem;
+    }
+
     /* Steps indicator */
     .steps {
       display: flex;
@@ -599,6 +666,28 @@
       </div>
     </header>
 
+    <!-- Photo Size Selector -->
+    <div class="size-selector">
+      <div class="size-selector-label">Select Photo Size</div>
+      <div class="size-options" id="sizeOptions">
+        <button type="button" class="size-option active" data-format="icao">
+          <span class="size-option-flag">🌍</span>
+          <span class="size-option-country">International</span>
+          <span class="size-option-dims">35 × 45 mm</span>
+        </button>
+        <button type="button" class="size-option" data-format="usa">
+          <span class="size-option-flag">🇺🇸</span>
+          <span class="size-option-country">USA</span>
+          <span class="size-option-dims">2 × 2 in</span>
+        </button>
+        <button type="button" class="size-option" data-format="canada">
+          <span class="size-option-flag">🇨🇦</span>
+          <span class="size-option-country">Canada</span>
+          <span class="size-option-dims">50 × 70 mm</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Steps -->
     <nav class="steps" role="navigation" aria-label="Progress">
       <div class="step active" id="step1" data-step="1">
@@ -702,8 +791,8 @@
         <div class="sidebar-card">
           <h3 class="sidebar-title">Photo Specifications</h3>
 
-          <div class="spec-badges">
-            <span class="spec-badge">35 x 45 mm</span>
+          <div class="spec-badges" id="specBadges">
+            <span class="spec-badge">35 × 45 mm</span>
             <span class="spec-badge">300 DPI</span>
             <span class="spec-badge">JPEG</span>
             <span class="spec-badge">&lt; 1 MB</span>
@@ -747,7 +836,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer" id="footerText">
       ICAO/ISO compliant passport photo format
     </footer>
   </div>
@@ -770,18 +859,68 @@
     const statusMsg = document.getElementById("statusMsg");
     const outputInfo = document.getElementById("outputInfo");
     const steps = document.querySelectorAll(".step");
+    const sizeOptions = document.querySelectorAll(".size-option");
+    const specBadges = document.getElementById("specBadges");
+    const footerText = document.getElementById("footerText");
+
+    // ==================== Photo Format Configurations ====================
+    const PHOTO_FORMATS = {
+      icao: {
+        name: "International (ICAO)",
+        country: "International",
+        widthMm: 35,
+        heightMm: 45,
+        widthPx: 413,   // 35mm at 300 DPI
+        heightPx: 531,  // 45mm at 300 DPI
+        faceMinMm: 32,
+        faceMaxMm: 36,
+        // Eye zone: 28-42% from top
+        eyeZoneTopPct: 0.28,
+        eyeZoneBottomPct: 0.42,
+        description: "EU, UK, Australia, Schengen, most countries"
+      },
+      usa: {
+        name: "USA",
+        country: "USA",
+        widthMm: 51,
+        heightMm: 51,
+        widthPx: 600,   // 2 inches at 300 DPI
+        heightPx: 600,
+        faceMinMm: 25,
+        faceMaxMm: 35,
+        // Eyes 28-35mm from bottom of 51mm = 31-44% from top
+        eyeZoneTopPct: 0.31,
+        eyeZoneBottomPct: 0.44,
+        description: "US Passport & Visa (2×2 inches)"
+      },
+      canada: {
+        name: "Canada",
+        country: "Canada",
+        widthMm: 50,
+        heightMm: 70,
+        widthPx: 591,   // 50mm at 300 DPI
+        heightPx: 827,  // 70mm at 300 DPI
+        faceMinMm: 31,
+        faceMaxMm: 36,
+        // Face positioned in upper portion, eyes ~31-43% from top
+        eyeZoneTopPct: 0.31,
+        eyeZoneBottomPct: 0.43,
+        description: "Canadian Passport (50×70 mm)"
+      }
+    };
+
+    // Current format state
+    let currentFormat = PHOTO_FORMATS.icao;
 
     // ==================== Constants ====================
-    const TARGET_WIDTH = 413;
-    const TARGET_HEIGHT = 531;
     const TARGET_DPI = 300;
     const MAX_BYTES = 1_000_000;
 
     // Offscreen canvas for export
     const exportCanvas = document.createElement("canvas");
     const exportCtx = exportCanvas.getContext("2d");
-    exportCanvas.width = TARGET_WIDTH;
-    exportCanvas.height = TARGET_HEIGHT;
+    exportCanvas.width = currentFormat.widthPx;
+    exportCanvas.height = currentFormat.heightPx;
 
     // ==================== State ====================
     const state = {
@@ -799,6 +938,72 @@
       dragOffsetY: 0,
       needsRender: false,
     };
+
+    // ==================== Format Switching ====================
+    function switchFormat(formatKey) {
+      if (!PHOTO_FORMATS[formatKey]) return;
+
+      currentFormat = PHOTO_FORMATS[formatKey];
+
+      // Update canvas dimensions
+      canvas.width = currentFormat.widthPx;
+      canvas.height = currentFormat.heightPx;
+      exportCanvas.width = currentFormat.widthPx;
+      exportCanvas.height = currentFormat.heightPx;
+
+      // Update UI selection
+      sizeOptions.forEach(opt => {
+        opt.classList.toggle("active", opt.dataset.format === formatKey);
+      });
+
+      // Update spec badges in sidebar
+      if (specBadges) {
+        const sizeText = currentFormat.widthMm === 51
+          ? "2 × 2 in"
+          : `${currentFormat.widthMm} × ${currentFormat.heightMm} mm`;
+        specBadges.innerHTML = `
+          <span class="spec-badge">${sizeText}</span>
+          <span class="spec-badge">300 DPI</span>
+          <span class="spec-badge">JPEG</span>
+          <span class="spec-badge">&lt; 1 MB</span>
+        `;
+      }
+
+      // Update output info
+      const dimsText = currentFormat.widthMm === 51
+        ? "2×2 in"
+        : `${currentFormat.widthMm}×${currentFormat.heightMm}mm`;
+      outputInfo.textContent = `${dimsText} | 300 DPI | Under 1 MB`;
+
+      // Update footer
+      if (footerText) {
+        footerText.textContent = currentFormat.description;
+      }
+
+      // Re-fit image if one is loaded
+      if (state.img) {
+        fitImageToCanvas(state.img);
+      } else {
+        drawEmptyPlaceholder();
+      }
+    }
+
+    // Size option click handlers
+    sizeOptions.forEach(opt => {
+      opt.addEventListener("click", () => {
+        const formatKey = opt.dataset.format;
+        if (formatKey && formatKey !== getCurrentFormatKey()) {
+          switchFormat(formatKey);
+        }
+      });
+    });
+
+    function getCurrentFormatKey() {
+      for (const [key, format] of Object.entries(PHOTO_FORMATS)) {
+        if (format === currentFormat) return key;
+      }
+      return "icao";
+    }
 
     // ==================== Step Management ====================
     function setStep(stepNum) {
@@ -898,18 +1103,14 @@
       const w = context.canvas.width;
       const h = context.canvas.height;
 
-      // ICAO measurements (photo is 45mm tall)
-      const pxPerMm = h / 45;
-      const faceMinMm = 32;
-      const faceMaxMm = 36;
-      const faceMinPx = faceMinMm * pxPerMm;
-      const faceMaxPx = faceMaxMm * pxPerMm;
+      // Use current format's measurements
+      const pxPerMm = h / currentFormat.heightMm;
+      const faceMinPx = currentFormat.faceMinMm * pxPerMm;
+      const faceMaxPx = currentFormat.faceMaxMm * pxPerMm;
 
-      // Eye zone: approximately 30-40% from top (allows for variation in face shapes)
-      const eyeZoneTopPct = 0.28;
-      const eyeZoneBottomPct = 0.42;
-      const eyeZoneTop = h * eyeZoneTopPct;
-      const eyeZoneBottom = h * eyeZoneBottomPct;
+      // Eye zone from format config
+      const eyeZoneTop = h * currentFormat.eyeZoneTopPct;
+      const eyeZoneBottom = h * currentFormat.eyeZoneBottomPct;
       const eyeZoneHeight = eyeZoneBottom - eyeZoneTop;
 
       // Face oval center: positioned based on eye zone center
@@ -988,7 +1189,7 @@
       context.fillStyle = "rgba(37, 99, 235, 0.7)";
       context.font = "9px system-ui, sans-serif";
       context.textAlign = "center";
-      context.fillText("32-36mm", centerX, faceCenterY + outerRy + 12);
+      context.fillText(`${currentFormat.faceMinMm}-${currentFormat.faceMaxMm}mm`, centerX, faceCenterY + outerRy + 12);
 
       context.restore();
     }
@@ -1237,14 +1438,15 @@
         const finalBlob = await patchJpegDpi(optimizedBlob, TARGET_DPI);
         const sizeKB = (finalBlob.size / 1024).toFixed(0);
 
-        outputInfo.textContent = `${TARGET_WIDTH}x${TARGET_HEIGHT}px | ${TARGET_DPI} DPI | ${sizeKB} KB`;
+        outputInfo.textContent = `${currentFormat.widthPx}×${currentFormat.heightPx}px | ${TARGET_DPI} DPI | ${sizeKB} KB`;
 
         const url = URL.createObjectURL(finalBlob);
         const a = document.createElement("a");
         const timestamp = new Date().toISOString().replace(/[:-]/g, "").split(".")[0];
+        const formatName = currentFormat.country.toLowerCase().replace(/\s+/g, "_");
 
         a.href = url;
-        a.download = `passport_photo_${timestamp}.jpg`;
+        a.download = `passport_photo_${formatName}_${timestamp}.jpg`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
