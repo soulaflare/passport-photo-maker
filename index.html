@@ -151,6 +151,85 @@
       margin-bottom: 0.2rem;
     }
 
+    /* Custom size inputs */
+    .custom-inputs {
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: var(--color-gray-50);
+      border: 1px solid var(--color-gray-200);
+      border-radius: var(--radius-md);
+      max-width: 280px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .custom-inputs.visible {
+      display: flex;
+    }
+
+    .custom-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .custom-input-row label {
+      font-size: 0.8rem;
+      color: var(--color-gray-600);
+      min-width: 50px;
+    }
+
+    .custom-input-row input {
+      width: 70px;
+      padding: 0.4rem 0.5rem;
+      border: 1px solid var(--color-gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .custom-input-row input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+
+    .custom-input-row span {
+      font-size: 0.75rem;
+      color: var(--color-gray-400);
+    }
+
+    .custom-apply-btn {
+      margin-top: 0.25rem;
+      padding: 0.5rem 1rem;
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .custom-apply-btn:hover {
+      background: var(--color-primary-hover);
+    }
+
+    .custom-hint {
+      font-size: 0.7rem;
+      color: var(--color-gray-400);
+      text-align: center;
+    }
+
+    .custom-error {
+      font-size: 0.75rem;
+      color: var(--color-error);
+      text-align: center;
+    }
+
     /* Steps indicator */
     .steps {
       display: flex;
@@ -685,6 +764,26 @@
           <span class="size-option-country">Canada</span>
           <span class="size-option-dims">50 × 70 mm</span>
         </button>
+        <button type="button" class="size-option" data-format="custom">
+          <span class="size-option-flag">⚙️</span>
+          <span class="size-option-country">Custom</span>
+          <span class="size-option-dims">Set your own</span>
+        </button>
+      </div>
+      <div class="custom-inputs" id="customInputs">
+        <div class="custom-input-row">
+          <label for="customWidth">Width</label>
+          <input type="number" id="customWidth" min="20" max="100" value="35" />
+          <span>mm</span>
+        </div>
+        <div class="custom-input-row">
+          <label for="customHeight">Height</label>
+          <input type="number" id="customHeight" min="20" max="100" value="45" />
+          <span>mm</span>
+        </div>
+        <div class="custom-hint">Min: 20mm, Max: 100mm per side</div>
+        <div class="custom-error" id="customError"></div>
+        <button type="button" class="custom-apply-btn" id="customApplyBtn">Apply Size</button>
       </div>
     </div>
 
@@ -862,6 +961,11 @@
     const sizeOptions = document.querySelectorAll(".size-option");
     const specBadges = document.getElementById("specBadges");
     const footerText = document.getElementById("footerText");
+    const customInputs = document.getElementById("customInputs");
+    const customWidth = document.getElementById("customWidth");
+    const customHeight = document.getElementById("customHeight");
+    const customApplyBtn = document.getElementById("customApplyBtn");
+    const customError = document.getElementById("customError");
 
     // ==================== Photo Format Configurations ====================
     const PHOTO_FORMATS = {
@@ -906,7 +1010,26 @@
         eyeZoneTopPct: 0.31,
         eyeZoneBottomPct: 0.43,
         description: "Canadian Passport (50×70 mm)"
+      },
+      custom: {
+        name: "Custom",
+        country: "Custom",
+        widthMm: 35,
+        heightMm: 45,
+        widthPx: 413,
+        heightPx: 531,
+        faceMinMm: 32,
+        faceMaxMm: 36,
+        eyeZoneTopPct: 0.28,
+        eyeZoneBottomPct: 0.42,
+        description: "Custom size"
       }
+    };
+
+    // Size limits for custom format
+    const CUSTOM_SIZE_LIMITS = {
+      minMm: 20,
+      maxMm: 100
     };
 
     // Current format state
@@ -940,7 +1063,7 @@
     };
 
     // ==================== Format Switching ====================
-    function switchFormat(formatKey) {
+    function switchFormat(formatKey, skipCustomInputs = false) {
       if (!PHOTO_FORMATS[formatKey]) return;
 
       currentFormat = PHOTO_FORMATS[formatKey];
@@ -955,6 +1078,12 @@
       sizeOptions.forEach(opt => {
         opt.classList.toggle("active", opt.dataset.format === formatKey);
       });
+
+      // Show/hide custom inputs
+      if (!skipCustomInputs) {
+        customInputs.classList.toggle("visible", formatKey === "custom");
+        customError.textContent = "";
+      }
 
       // Update spec badges in sidebar
       if (specBadges) {
@@ -987,6 +1116,72 @@
         drawEmptyPlaceholder();
       }
     }
+
+    // Apply custom size
+    function applyCustomSize() {
+      const widthMm = parseInt(customWidth.value, 10);
+      const heightMm = parseInt(customHeight.value, 10);
+
+      // Validation
+      if (isNaN(widthMm) || isNaN(heightMm)) {
+        customError.textContent = "Please enter valid numbers";
+        return false;
+      }
+
+      if (widthMm < CUSTOM_SIZE_LIMITS.minMm || widthMm > CUSTOM_SIZE_LIMITS.maxMm) {
+        customError.textContent = `Width must be ${CUSTOM_SIZE_LIMITS.minMm}-${CUSTOM_SIZE_LIMITS.maxMm}mm`;
+        return false;
+      }
+
+      if (heightMm < CUSTOM_SIZE_LIMITS.minMm || heightMm > CUSTOM_SIZE_LIMITS.maxMm) {
+        customError.textContent = `Height must be ${CUSTOM_SIZE_LIMITS.minMm}-${CUSTOM_SIZE_LIMITS.maxMm}mm`;
+        return false;
+      }
+
+      customError.textContent = "";
+
+      // Calculate pixels at 300 DPI (1 inch = 25.4mm)
+      const widthPx = Math.round((widthMm / 25.4) * 300);
+      const heightPx = Math.round((heightMm / 25.4) * 300);
+
+      // Calculate sensible face height defaults (70-80% of photo height)
+      const faceMinMm = Math.round(heightMm * 0.70);
+      const faceMaxMm = Math.round(heightMm * 0.80);
+
+      // Eye zone defaults (30-42% from top works for most formats)
+      const eyeZoneTopPct = 0.30;
+      const eyeZoneBottomPct = 0.42;
+
+      // Update custom format
+      PHOTO_FORMATS.custom = {
+        name: "Custom",
+        country: "Custom",
+        widthMm: widthMm,
+        heightMm: heightMm,
+        widthPx: widthPx,
+        heightPx: heightPx,
+        faceMinMm: faceMinMm,
+        faceMaxMm: faceMaxMm,
+        eyeZoneTopPct: eyeZoneTopPct,
+        eyeZoneBottomPct: eyeZoneBottomPct,
+        description: `Custom size (${widthMm}×${heightMm} mm)`
+      };
+
+      // Apply the format
+      switchFormat("custom", true);
+      return true;
+    }
+
+    // Custom apply button handler
+    customApplyBtn.addEventListener("click", applyCustomSize);
+
+    // Allow Enter key in custom inputs
+    customWidth.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") applyCustomSize();
+    });
+    customHeight.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") applyCustomSize();
+    });
 
     // Size option click handlers
     sizeOptions.forEach(opt => {
