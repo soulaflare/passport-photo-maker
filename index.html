@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Passport Photo Maker - Free Online Tool</title>
+  <title>Passport Photo Maker — Free, Private, ICAO-Compliant</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="Free passport photo maker. Creates ICAO-compliant 35x45mm photos at 300 DPI. Runs entirely in your browser - your photos never leave your device." />
+  <meta name="description" content="Free passport photo maker. Crop, align, and compress your photo to official ICAO, USA, or Canada specs at 300 DPI under 1 MB — without losing quality. Runs in your browser; your photo never uploads." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hammersmith+One&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script>
     (function(){
       var s = localStorage.getItem('theme');
@@ -16,164 +16,163 @@
     })();
   </script>
   <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
 
+    /* ========================================================
+       Heritage Reimagined — design system
+       Palette: warm paper + ink + ultramarine (light) / foil gold (dark)
+       Type: Fraunces (display serif), Inter (body), JetBrains Mono (specs)
+       ======================================================== */
     :root {
-      --color-primary: rgba(196, 33, 33, 1);
-      --color-primary-hover: rgba(250, 197, 28, 1);
-      --color-primary-glow: rgba(196, 33, 33, 0.2);
-      --color-primary-muted: rgba(196, 33, 33, 0.08);
-      --color-success: #059669;
-      --color-success-bg: rgba(5, 150, 105, 0.08);
-      --color-error: #ef4444;
-      --color-warn: #b45309;
-      --surface-app: #f5f3f4;
-      --surface-card: #ffffff;
-      --surface-input: #f9f8f9;
-      --color-border: #e0dce0;
-      --color-border-subtle: rgba(0, 0, 0, 0.06);
-      --color-text: rgba(15, 6, 13, 0.92);
-      --color-text-secondary: rgba(15, 6, 13, 0.6);
-      --color-text-tertiary: rgba(15, 6, 13, 0.4);
-      --heading-color: rgba(15, 6, 13, 1);
-      --font-heading: 'Hammersmith One', system-ui, sans-serif;
-      --font-body: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --radius-sm: 0.5rem;
-      --radius-md: 0.75rem;
-      --radius-lg: 1rem;
-      --radius-full: 999px;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-      --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
-      --canvas-shadow: -8px 6px 15px 0px rgba(0,0,0,0.12);
-      --overlay-bg: rgba(255, 255, 255, 0.92);
-      --tint-hover: rgba(0, 0, 0, 0.04);
-      --border-hover: rgba(0, 0, 0, 0.15);
-      --spinner-track: rgba(0, 0, 0, 0.1);
-      --drop-border: rgba(0, 0, 0, 0.15);
-      --privacy-bg: rgba(5, 150, 105, 0.06);
-      --privacy-border: rgba(5, 150, 105, 0.15);
-      --badge-border: rgba(196, 33, 33, 0.2);
+      --paper: oklch(0.96 0.012 80);
+      --paper-deep: oklch(0.93 0.015 80);
+      --surface: oklch(0.99 0.008 80);
+      --surface-sunken: oklch(0.92 0.018 80);
+
+      --ink: oklch(0.20 0.02 280);
+      --ink-muted: oklch(0.42 0.02 280);
+      --ink-faint: oklch(0.62 0.015 280);
+
+      --hairline: oklch(0.84 0.012 80);
+      --hairline-strong: oklch(0.72 0.012 80);
+
+      --accent: oklch(0.48 0.17 22);           /* stamp red — passport / official document ink */
+      --accent-soft: oklch(0.40 0.18 22);
+      --accent-tint: oklch(0.94 0.04 22);
+
+      --success: oklch(0.50 0.11 150);
+      --success-tint: oklch(0.93 0.05 150);
+      --warn: oklch(0.58 0.14 65);
+      --error: oklch(0.55 0.20 28);
+
+      --font-display: 'Fraunces', 'Iowan Old Style', 'Times New Roman', Georgia, serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+      --radius-sm: 3px;
+      --radius: 6px;
+      --radius-lg: 10px;
+
+      --max-content: 1100px;
+      --gutter: clamp(1rem, 4vw, 2.5rem);
+
+      --paper-overlay: oklch(0.96 0.012 80 / 0.92);
     }
 
     [data-theme="dark"] {
-      --color-warn: #f59e0b;
-      --color-primary-glow: rgba(196, 33, 33, 0.4);
-      --color-primary-muted: rgba(196, 33, 33, 0.15);
-      --color-success-bg: rgba(5, 150, 105, 0.12);
-      --surface-app: rgba(15, 6, 13, 1);
-      --surface-card: rgba(48, 51, 57, 1);
-      --surface-input: rgba(30, 28, 32, 1);
-      --color-border: rgba(62, 62, 62, 1);
-      --color-border-subtle: rgba(255, 255, 255, 0.08);
-      --color-text: rgba(255, 255, 255, 0.92);
-      --color-text-secondary: rgba(255, 255, 255, 0.6);
-      --color-text-tertiary: rgba(255, 255, 255, 0.4);
-      --heading-color: #fff;
-      --shadow-lg: 0 10px 40px rgba(0,0,0,0.5);
-      --canvas-shadow: -8px 6px 15px 0px rgba(0,0,0,0.3);
-      --overlay-bg: rgba(15, 6, 13, 0.90);
-      --tint-hover: rgba(255, 255, 255, 0.06);
-      --border-hover: rgba(255, 255, 255, 0.2);
-      --spinner-track: rgba(255, 255, 255, 0.1);
-      --drop-border: rgba(255, 255, 255, 0.15);
-      --privacy-bg: rgba(5, 150, 105, 0.1);
-      --privacy-border: rgba(5, 150, 105, 0.2);
-      --badge-border: rgba(196, 33, 33, 0.3);
+      --paper: oklch(0.18 0.02 268);
+      --paper-deep: oklch(0.15 0.02 268);
+      --surface: oklch(0.22 0.02 268);
+      --surface-sunken: oklch(0.16 0.02 268);
+
+      --ink: oklch(0.95 0.012 80);
+      --ink-muted: oklch(0.72 0.012 80);
+      --ink-faint: oklch(0.52 0.012 80);
+
+      --hairline: oklch(0.30 0.02 268);
+      --hairline-strong: oklch(0.40 0.02 268);
+
+      --accent: oklch(0.72 0.17 22);            /* warm vermilion — burgundy-passport feel on navy */
+      --accent-soft: oklch(0.78 0.18 22);
+      --accent-tint: oklch(0.32 0.09 22);
+
+      --success: oklch(0.72 0.13 150);
+      --success-tint: oklch(0.25 0.06 150);
+      --warn: oklch(0.78 0.14 70);
+      --error: oklch(0.70 0.20 28);
+
+      --paper-overlay: oklch(0.18 0.02 268 / 0.92);
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
     }
 
     body {
-      font-family: var(--font-body);
-      background: var(--surface-app);
-      color: var(--color-text);
-      margin: 0;
-      padding: 1rem;
       min-height: 100vh;
+      /* Subtle paper grain — turbulence noise at very low opacity */
+      background-image:
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      background-size: 240px 240px;
     }
 
-    .app {
-      width: 100%;
-      max-width: 900px;
+    /* ===== Layout shell ===== */
+    .shell {
+      max-width: var(--max-content);
       margin: 0 auto;
-      background: var(--surface-card);
-      padding: 1.5rem;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-      border-top: 4px solid var(--color-primary);
+      padding: clamp(1rem, 3vw, 2rem) var(--gutter) clamp(6rem, 8vw, 4rem);
     }
 
-    /* Header */
-    .header {
-      position: relative;
-      text-align: center;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--color-border-subtle);
-      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    @media (min-width: 768px) {
+      .shell { padding-bottom: clamp(2.5rem, 5vw, 4rem); }
     }
 
-    .header h1 {
-      font-family: var(--font-heading);
-      font-size: 1.75rem;
-      font-weight: 400;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin: 0 0 0.6rem;
-      color: var(--heading-color);
-    }
-
-    .privacy-banner {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: var(--privacy-bg);
-      border: 1px solid var(--privacy-border);
-      color: var(--color-success);
-      padding: 0.4rem 0.75rem;
-      border-radius: var(--radius-full);
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    .privacy-banner svg {
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
-    }
-
-    /* Theme toggle */
-    .theme-toggle {
-      position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
-      width: 36px;
-      height: 36px;
-      min-height: unset;
-      padding: 0;
-      border: 1px solid var(--color-border);
-      border-radius: 50%;
-      background: var(--surface-input);
-      color: var(--color-text-secondary);
-      cursor: pointer;
+    /* ===== Masthead ===== */
+    .masthead {
       display: flex;
       align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-      text-transform: none;
-      letter-spacing: normal;
-      font-weight: normal;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      margin-bottom: clamp(2rem, 5vw, 3rem);
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .brand-mark {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-mark::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px var(--success-tint);
+    }
+
+    @media (max-width: 480px) {
+      .brand-mark { font-size: 0.62rem; letter-spacing: 0.14em; }
+    }
+
+    .theme-toggle {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      background: transparent;
+      border: 1px solid var(--hairline-strong);
+      color: var(--ink-muted);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
     }
 
     .theme-toggle:hover {
-      color: var(--color-primary);
-      border-color: var(--color-primary);
-      background: var(--color-primary-muted);
+      border-color: var(--ink);
+      color: var(--ink);
+      background: var(--surface);
     }
 
-    .theme-toggle::before {
-      display: none;
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     .theme-icon { display: none; }
@@ -183,325 +182,490 @@
     [data-theme-setting="dark"] .theme-icon-auto { display: none; }
     [data-theme-setting="dark"] .theme-icon-dark { display: block; }
 
-    /* Photo size selector */
-    .size-selector {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+    /* ===== Hero ===== */
+    .hero {
+      margin-bottom: clamp(2rem, 5vw, 3rem);
     }
 
-    .size-selector-label {
-      font-family: var(--font-body);
-      font-size: 0.75rem;
-      color: var(--color-text-tertiary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .size-options {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .size-option {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0.5rem 0.75rem;
-      border: 2px solid var(--color-border);
-      border-radius: var(--radius-md);
-      background: var(--surface-input);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      min-width: 90px;
-    }
-
-    .size-option:hover {
-      border-color: var(--border-hover);
-      transform: translateY(-2px);
-    }
-
-    .size-option.active {
-      border-color: var(--color-primary);
-      background: var(--color-primary-muted);
-    }
-
-    .size-option-country {
-      font-family: var(--font-heading);
-      font-size: 0.85rem;
+    .hero-headline {
+      font-family: var(--font-display);
       font-weight: 400;
-      color: var(--color-text);
+      font-size: clamp(2.2rem, 6.4vw, 4.2rem);
+      line-height: 1.0;
+      letter-spacing: -0.025em;
+      margin: 0 0 0.85rem;
+      color: var(--ink);
+      font-variation-settings: "opsz" 144;
+      max-width: 16ch;
     }
 
-    .size-option.active .size-option-country {
-      color: var(--color-primary);
+
+    .hero-lede {
+      margin: 0;
+      font-size: clamp(1rem, 1.6vw, 1.1rem);
+      color: var(--ink-muted);
+      max-width: 52ch;
     }
 
-    .size-option-dims {
-      font-size: 0.7rem;
-      color: var(--color-text-tertiary);
-      margin-top: 0.15rem;
-    }
-
-    .size-option-flag {
-      font-size: 1.1rem;
-      margin-bottom: 0.2rem;
-    }
-
-    /* Custom size inputs */
-    .custom-inputs {
-      display: none;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-top: 0.75rem;
-      padding: 0.75rem;
-      background: var(--surface-input);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      max-width: 280px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .custom-inputs.visible {
-      display: flex;
-    }
-
-    .custom-input-row {
-      display: flex;
+    .hero-meta {
+      margin-top: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: inline-flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .custom-input-row label {
-      font-size: 0.8rem;
-      color: var(--color-text-secondary);
-      min-width: 50px;
+    .hero-meta::before {
+      content: '';
+      width: 18px;
+      height: 1px;
+      background: currentColor;
     }
 
-    .custom-input-row input {
-      width: 70px;
-      padding: 0.4rem 0.5rem;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      text-align: center;
-      background: var(--surface-card);
-      color: var(--color-text);
-    }
-
-    .custom-input-row input:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 2px var(--color-primary-glow);
-    }
-
-    .custom-input-row span {
-      font-size: 0.75rem;
-      color: var(--color-text-tertiary);
-    }
-
-    .custom-apply-btn {
-      margin-top: 0.25rem;
-      padding: 0.5rem 1rem;
-      background: var(--color-primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      font-family: var(--font-body);
+    /* ===== Section eyebrow ===== */
+    .section-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      letter-spacing: 0.02em;
-      cursor: pointer;
-      transition: background 0.15s ease;
+      color: var(--ink-faint);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
     }
 
-    .custom-apply-btn:hover {
-      background: var(--color-primary-hover);
-      color: rgba(15, 6, 13, 1);
+    .section-eyebrow::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--hairline);
     }
+
+    /* ===== Format selector ===== */
+    .format-section { margin-bottom: clamp(1.5rem, 4vw, 2.5rem); }
+
+    .format-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--hairline-strong);
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .format-option {
+      appearance: none;
+      background: transparent;
+      border: none;
+      border-right: 1px solid var(--hairline);
+      padding: 0.95rem 0.75rem 0.85rem;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-height: 78px;
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+    }
+
+    .format-option:last-child { border-right: none; }
+
+    .format-option:hover {
+      background: var(--surface-sunken);
+    }
+
+    .format-option:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    .format-option.active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .format-option.active .format-code,
+    .format-option.active .format-dims {
+      color: var(--paper);
+      opacity: 0.65;
+    }
+
+    .format-code {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      color: var(--ink-faint);
+      text-transform: uppercase;
+    }
+
+    .format-name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 450;
+      line-height: 1.15;
+      font-variation-settings: "opsz" 14;
+    }
+
+    .format-dims {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--ink-faint);
+    }
+
+    @media (max-width: 640px) {
+      .format-row { grid-template-columns: repeat(2, 1fr); }
+      .format-option:nth-child(2) { border-right: none; }
+      .format-option:nth-child(1),
+      .format-option:nth-child(2) { border-bottom: 1px solid var(--hairline); }
+    }
+
+    /* ===== Custom inputs ===== */
+    .custom-fields {
+      display: none;
+      flex-wrap: wrap;
+      gap: 0.85rem 1rem;
+      align-items: flex-end;
+      padding: 1rem 1.1rem;
+      background: var(--surface);
+      border: 1px solid var(--hairline-strong);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      margin-top: -1px;
+    }
+
+    .custom-fields.visible { display: flex; }
+
+    .custom-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .custom-field label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+
+    .custom-field input {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      width: 5.25rem;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--hairline-strong);
+      background: var(--paper);
+      color: var(--ink);
+      border-radius: var(--radius-sm);
+    }
+
+    .custom-field input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+      border-color: var(--accent);
+    }
+
+    .custom-times {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      color: var(--ink-faint);
+      align-self: flex-end;
+      padding-bottom: 0.5rem;
+    }
+
+    .custom-unit {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--ink-faint);
+      align-self: flex-end;
+      padding-bottom: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .custom-apply {
+      appearance: none;
+      background: var(--ink);
+      color: var(--paper);
+      border: none;
+      padding: 0.6rem 1.1rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      min-height: 40px;
+      transition: background 0.15s;
+    }
+
+    .custom-apply:hover { background: var(--accent); }
+    .custom-apply:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
     .custom-hint {
+      flex-basis: 100%;
+      margin: 0;
+      font-family: var(--font-mono);
       font-size: 0.7rem;
-      color: var(--color-text-tertiary);
-      text-align: center;
+      letter-spacing: 0.05em;
+      color: var(--ink-faint);
     }
 
     .custom-error {
-      font-size: 0.75rem;
-      color: var(--color-error);
-      text-align: center;
+      flex-basis: 100%;
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--error);
+      min-height: 0;
+    }
+    .custom-error:empty { display: none; }
+
+    /* ===== Progress (3-dot specimen-style) ===== */
+    .progress {
+      margin-bottom: clamp(2rem, 5vw, 3rem);
     }
 
-    /* Steps indicator */
-    .steps {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+    .progress-steps {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      position: relative;
+    }
+
+    /* Connector line under all steps */
+    .progress-steps::before {
+      content: '';
+      position: absolute;
+      top: 7px;
+      left: calc(100% / 6);
+      right: calc(100% / 6);
+      height: 1px;
+      background: var(--hairline-strong);
     }
 
     .step {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.4rem 0.75rem;
-      background: var(--tint-hover);
-      border-radius: var(--radius-full);
-      font-size: 0.8rem;
-      color: var(--color-text-tertiary);
-      transition: all 0.2s ease;
+      gap: 0.55rem;
+      position: relative;
+      z-index: 1;
     }
 
-    .step.active {
-      background: var(--color-primary);
-      color: #fff;
-      box-shadow: 0 0 12px var(--color-primary-glow);
-    }
-
-    .step.completed {
-      background: var(--color-success-bg);
-      color: var(--color-success);
-    }
-
-    .step-number {
-      width: 20px;
-      height: 20px;
+    .step-mark {
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
-      background: currentColor;
-      color: var(--surface-card);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      font-weight: 600;
+      background: var(--paper);
+      border: 1px solid var(--hairline-strong);
+      transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
     }
 
-    .step.active .step-number,
-    .step.completed .step-number {
-      background: rgba(255,255,255,0.25);
-      color: inherit;
+    .step.active .step-mark {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--paper), 0 0 0 5px var(--accent);
     }
 
-    /* Layout */
-    .layout {
+    .step.completed .step-mark {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .step-label {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      transition: color 0.2s;
+    }
+
+    .step.active .step-label { color: var(--accent); }
+    .step.completed .step-label { color: var(--success); }
+
+    /* Step number prefix using counters */
+    .progress-steps { counter-reset: step; }
+    .step { counter-increment: step; }
+    .step-label::before {
+      content: counter(step, decimal-leading-zero) ' · ';
+      color: var(--ink-faint);
+      opacity: 0.7;
+    }
+
+    /* ===== Workspace grid ===== */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: clamp(2rem, 4vw, 3rem);
+    }
+
+    @media (min-width: 920px) {
+      .workspace {
+        grid-template-columns: minmax(0, 1fr) 320px;
+        align-items: start;
+      }
+    }
+
+    /* ===== Editor column ===== */
+    .editor {
+      min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
-      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
     }
 
-    @media (min-width: 768px) {
-      .layout {
-        flex-direction: row;
-        align-items: flex-start;
-      }
-
-      .editor {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .sidebar {
-        width: 280px;
-        flex-shrink: 0;
-        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-      }
-    }
-
-    /* Drop zone */
+    /* ===== Drop zone ===== */
     .drop-zone {
-      border: 2px dashed var(--drop-border);
-      border-radius: var(--radius-md);
-      padding: 2rem 1rem;
-      text-align: center;
+      border: 1px dashed var(--hairline-strong);
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: clamp(2.5rem, 6vw, 3.5rem) 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
       cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--surface-input);
+      text-align: center;
+      transition: border-color 0.15s, background 0.15s;
+      outline: none;
     }
 
     .drop-zone:hover,
+    .drop-zone:focus-visible,
     .drop-zone.drag-over {
-      border-color: var(--color-primary);
-      background: rgba(196, 33, 33, 0.06);
+      border-color: var(--accent);
+      background: var(--accent-tint);
     }
 
     .drop-zone.has-image {
-      padding: 0.75rem;
-      border-style: solid;
-      border-color: var(--color-border);
-      background: var(--surface-input);
+      cursor: default;
+      padding: 0;
+      border: none;
+      background: transparent;
+      gap: 1.25rem;
     }
 
-    .drop-zone-content {
+    .drop-zone.has-image:hover,
+    .drop-zone.has-image:focus-visible,
+    .drop-zone.has-image.drag-over {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .drop-zone-empty {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
+      gap: 1rem;
     }
 
-    .drop-zone.has-image .drop-zone-content {
-      display: none;
-    }
+    .drop-zone.has-image .drop-zone-empty { display: none; }
 
     .drop-zone-icon {
-      width: 48px;
-      height: 48px;
-      color: var(--color-primary);
+      width: 36px;
+      height: 36px;
+      color: var(--ink-faint);
     }
 
     .drop-zone-text {
-      font-size: 0.95rem;
-      color: var(--color-text-secondary);
+      font-size: 1rem;
+      color: var(--ink);
     }
 
     .drop-zone-text strong {
-      color: var(--color-primary);
+      color: var(--accent);
+      font-weight: 500;
     }
 
     .drop-zone-hint {
-      font-size: 0.8rem;
-      color: var(--color-text-tertiary);
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
+      color: var(--ink-faint);
+      text-transform: uppercase;
     }
 
-    .file-input {
-      display: none;
-    }
+    .file-input { display: none; }
 
-    /* Canvas area */
+    /* ===== Canvas: specimen sheet ===== */
     .canvas-container {
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
+      gap: 1.25rem;
+      width: 100%;
     }
 
-    .drop-zone.has-image .canvas-container {
+    .drop-zone.has-image .canvas-container { display: flex; }
+
+    .canvas-stage {
+      position: relative;
+      width: 100%;
       display: flex;
+      justify-content: center;
+    }
+
+    .canvas-mat {
+      position: relative;
+      background: var(--paper);
+      padding: clamp(0.85rem, 2vw, 1.25rem);
+      display: inline-block;
+      max-width: 100%;
+      border: 1px solid var(--hairline-strong);
+      box-shadow:
+        0 0 0 1px var(--paper),
+        0 0 0 2px var(--hairline);
+    }
+
+    /* Specimen corner ornaments — small + crosses on the outer frame */
+    .canvas-mat::before,
+    .canvas-mat::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+      background:
+        linear-gradient(var(--accent), var(--accent)) center / 1px 100% no-repeat,
+        linear-gradient(var(--accent), var(--accent)) center / 100% 1px no-repeat;
+    }
+    .canvas-mat::before { top: -8px; left: -8px; }
+    .canvas-mat::after  { bottom: -8px; right: -8px; }
+
+    .canvas-serial {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      color: var(--ink-faint);
+      text-transform: uppercase;
+      margin-bottom: 0.55rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
     }
 
     .canvas-wrapper {
       position: relative;
-      width: 100%;
-      max-width: 300px;
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      border: 3px solid var(--color-primary);
-      box-shadow: var(--canvas-shadow);
+      display: block;
+      width: clamp(220px, 70vw, 340px);
       cursor: grab;
       touch-action: none;
+      background: #fff;
     }
 
-    .canvas-wrapper:active {
-      cursor: grabbing;
-    }
+    .canvas-wrapper:active { cursor: grabbing; }
 
     .canvas-wrapper canvas {
       display: block;
@@ -509,723 +673,600 @@
       height: auto;
     }
 
-    /* Loading overlay */
-    .loading-overlay {
+    /* Loading & success overlays */
+    .loading-overlay,
+    .success-overlay {
       position: absolute;
       inset: 0;
-      background: var(--overlay-bg);
       display: none;
       align-items: center;
       justify-content: center;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.85rem;
+      background: oklch(from var(--paper) l c h / 0.9);
+      backdrop-filter: blur(2px);
     }
 
-    .loading-overlay.visible {
-      display: flex;
-    }
+    .loading-overlay.visible,
+    .success-overlay.visible { display: flex; }
 
     .spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid var(--spinner-track);
-      border-top-color: var(--color-primary);
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--hairline);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .loading-text {
-      font-size: 0.85rem;
-      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
     }
 
-    /* Success overlay */
-    .success-overlay {
-      position: absolute;
-      inset: 0;
-      background: var(--overlay-bg);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 0.5rem;
-      animation: fadeIn 0.3s ease;
+    .success-stamp {
+      font-family: var(--font-mono);
+      font-size: clamp(0.85rem, 2.4vw, 1rem);
+      color: var(--success);
+      border: 2px solid var(--success);
+      padding: 0.45rem 1.1rem 0.5rem;
+      transform: rotate(-4deg);
+      letter-spacing: 0.18em;
+      font-weight: 500;
+      text-transform: uppercase;
+      animation: stampIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
-    .success-overlay.visible {
-      display: flex;
+    @keyframes stampIn {
+      0% { transform: rotate(-12deg) scale(1.4); opacity: 0; }
+      100% { transform: rotate(-5deg) scale(1); opacity: 1; }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .success-icon {
-      width: 48px;
-      height: 48px;
-      color: var(--color-success);
-      animation: scaleIn 0.3s ease;
-    }
-
-    @keyframes scaleIn {
-      from { transform: scale(0.5); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    .success-text {
-      font-family: var(--font-heading);
-      font-size: 0.95rem;
-      font-weight: 400;
-      color: var(--color-success);
-    }
-
-    .change-photo-btn {
-      font-size: 0.8rem;
-      color: var(--color-primary);
+    /* Replace photo */
+    .change-photo-link {
+      appearance: none;
       background: none;
       border: none;
       cursor: pointer;
-      text-decoration: none;
-      padding: 0.25rem;
-      transition: color 0.2s ease;
-      border-bottom: 1px solid transparent;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      padding: 0.3rem 0.4rem;
+      border-bottom: 1px solid var(--hairline);
+      align-self: center;
+      transition: color 0.15s, border-color 0.15s;
     }
 
-    .change-photo-btn:hover {
-      color: var(--color-primary-hover);
-      border-bottom-color: var(--color-primary-hover);
+    .change-photo-link:hover {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
     }
 
-    /* Controls */
-    .controls {
+    /* ===== Toolbar ===== */
+    .toolbar {
       width: 100%;
-      max-width: 300px;
+      max-width: 480px;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
+      gap: 0.85rem;
     }
 
-    .control-row {
+    .toolbar-row {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.4rem;
     }
 
-    .control-row label {
-      font-size: 0.8rem;
-      color: var(--color-text-secondary);
+    .label-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-    }
-
-    .control-row input[type="range"] {
-      width: 100%;
-      height: 6px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: var(--color-border-subtle);
-      border-radius: 3px;
-      outline: none;
-    }
-
-    .control-row input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 18px;
-      height: 18px;
-      background: var(--color-primary);
-      border-radius: 50%;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      box-shadow: 0 0 6px var(--color-primary-glow);
-    }
-
-    .control-row input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.1);
-      background: var(--color-primary-hover);
-    }
-
-    .control-row input[type="range"]::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
-      background: var(--color-primary);
-      border-radius: 50%;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 0 6px var(--color-primary-glow);
-    }
-
-    .control-row input[type="range"]::-moz-range-thumb:hover {
-      background: var(--color-primary-hover);
-    }
-
-    .control-row input[type="range"]::-moz-range-track {
-      background: var(--color-border-subtle);
-      height: 6px;
-      border-radius: 3px;
-      border: none;
-    }
-
-    .control-row input[type="range"]:focus {
-      outline: none;
-    }
-
-    .control-row input[type="range"]:focus-visible::-webkit-slider-thumb {
-      box-shadow: 0 0 0 3px var(--color-primary-glow);
-    }
-
-    .control-hint {
-      font-size: 0.75rem;
-      color: var(--color-text-tertiary);
-      text-align: center;
-      margin-top: 0.25rem;
-    }
-
-    /* Buttons */
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      justify-content: center;
-      margin-top: 0.5rem;
-    }
-
-    button {
-      font-family: var(--font-body);
-      border-radius: var(--radius-sm);
-      border: none;
-      padding: 0.6rem 1.1rem;
-      font-size: 0.85rem;
-      font-weight: 600;
+      align-items: baseline;
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+
+    .label-row .value {
+      color: var(--ink);
+      text-transform: none;
       letter-spacing: 0.02em;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--hairline);
+      outline: none;
+      border-radius: 2px;
+      margin: 0.25rem 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
       cursor: pointer;
+      border: 4px solid var(--paper);
+      box-shadow: 0 0 0 1px var(--accent);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: var(--accent-soft);
+      box-shadow: 0 0 0 1px var(--accent-soft), 0 0 0 5px var(--accent-tint);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: 4px solid var(--paper);
+      box-shadow: 0 0 0 1px var(--accent);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-track {
+      background: var(--hairline);
+      height: 4px;
+      border-radius: 2px;
+      border: none;
+    }
+
+    input[type="range"]:focus-visible::-webkit-slider-thumb {
+      box-shadow: 0 0 0 1px var(--ink), 0 0 0 4px var(--accent-tint);
+    }
+
+    .toolbar-hint {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.05em;
+      color: var(--ink-faint);
+      text-align: center;
+      margin: 0;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 0.6rem;
+      width: 100%;
+    }
+
+    .btn {
+      appearance: none;
+      font: inherit;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1.1rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      min-height: 46px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.4rem;
-      transition: all 0.15s ease;
-      min-height: 44px;
-      position: relative;
-      overflow: hidden;
+      gap: 0.55rem;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
+      border: 1px solid transparent;
     }
 
-    button:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 2px;
+    .btn:active { transform: translateY(1px); }
+    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--paper);
+      border-color: var(--accent);
+      flex: 1;
     }
 
-    button.primary {
-      background: var(--color-primary);
-      color: #fff;
-      box-shadow: 0 2px 8px var(--color-primary-glow);
-      z-index: 1;
+    .btn-primary:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent-soft);
     }
 
-    button.primary::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 0;
-      height: 100%;
-      background: var(--color-primary-hover);
-      transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: -1;
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink);
+      border-color: var(--hairline-strong);
     }
 
-    button.primary:hover {
-      color: rgba(15, 6, 13, 1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px var(--color-primary-glow);
+    .btn-secondary:hover {
+      border-color: var(--ink);
+      background: var(--surface);
     }
 
-    button.primary:hover::before {
-      width: 100%;
-    }
-
-    button.primary:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px var(--color-primary-glow);
-    }
-
-    button.secondary {
-      background: var(--tint-hover);
-      color: var(--color-text);
-      border: 1px solid var(--drop-border);
-    }
-
-    button.secondary:hover {
-      background: var(--border-hover);
-      border-color: var(--border-hover);
-    }
-
-    button:disabled {
-      opacity: 0.5;
+    .btn:disabled {
+      opacity: 0.45;
       cursor: not-allowed;
       transform: none !important;
     }
 
-    button:disabled::before {
-      display: none;
-    }
-
-    /* Status */
+    /* ===== Status / output info ===== */
     .status {
       text-align: center;
-      font-size: 0.8rem;
-      min-height: 1.2rem;
-      margin-top: 0.5rem;
-      color: var(--color-text-secondary);
+      font-size: 0.86rem;
+      min-height: 1.3rem;
+      color: var(--ink-muted);
     }
 
-    .status.success {
-      color: var(--color-success);
-    }
-
-    .status.error {
-      color: var(--color-error);
-    }
-
-    .status.warn {
-      color: var(--color-warn);
-    }
+    .status.success { color: var(--success); }
+    .status.error   { color: var(--error); }
+    .status.warn    { color: var(--warn); }
 
     .output-info {
       text-align: center;
-      font-size: 0.75rem;
-      color: var(--color-text-tertiary);
-      margin-top: 0.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
+      color: var(--ink-faint);
+      text-transform: uppercase;
     }
 
-    /* Sidebar */
-    .sidebar-card {
-      background: var(--surface-input);
-      border: 1px solid var(--color-border);
-      border-left: 4px solid var(--color-primary);
-      border-radius: var(--radius-md);
-      padding: 1rem;
+    /* ===== Specs sidebar ===== */
+    .specs-section { min-width: 0; }
+
+    .specs {
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.4rem 1.4rem;
     }
 
-    .sidebar-title {
-      font-family: var(--font-heading);
-      font-size: 0.95rem;
+    .specs-title {
+      font-family: var(--font-display);
       font-weight: 400;
-      margin: 0 0 0.75rem;
-      color: var(--heading-color);
+      font-size: 1.5rem;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      margin: 0 0 0.3rem;
+      color: var(--ink);
+      font-variation-settings: "opsz" 24;
     }
 
-    .spec-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      margin-bottom: 1rem;
+    .specs-desc {
+      margin: 0 0 1rem;
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      line-height: 1.45;
     }
 
-    .spec-badge {
-      font-size: 0.7rem;
-      padding: 0.25rem 0.5rem;
-      background: var(--color-primary-muted);
-      border: 1px solid var(--badge-border);
-      border-radius: var(--radius-full);
-      color: var(--color-text-secondary);
+    .specs-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.5rem 1rem;
+      margin: 0 0 1.25rem;
+      padding: 0.85rem 0;
+      border-top: 1px solid var(--hairline);
+      border-bottom: 1px solid var(--hairline);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
     }
 
-    .guide-section {
-      margin-bottom: 1rem;
-      padding: 0.5rem;
-      border-radius: var(--radius-sm);
-      transition: background 0.2s ease;
+    .specs-grid dt {
+      color: var(--ink-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.65rem;
+      align-self: center;
     }
 
-    .guide-section:hover {
-      background: var(--tint-hover);
-    }
-
-    .guide-section:last-child {
-      margin-bottom: 0;
-    }
-
-    .guide-section h4 {
-      font-family: var(--font-heading);
-      font-size: 0.8rem;
-      font-weight: 400;
-      margin: 0 0 0.4rem;
-      color: var(--color-text);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .guide-section p {
-      font-size: 0.8rem;
-      color: var(--color-text-tertiary);
+    .specs-grid dd {
       margin: 0;
-      line-height: 1.5;
+      color: var(--ink);
     }
 
-    .guide-section p strong {
-      color: var(--color-primary);
+    .guide {
+      margin-bottom: 1rem;
+    }
+
+    .guide:last-child { margin-bottom: 0; }
+
+    .guide h3 {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 450;
+      margin: 0 0 0.25rem;
+      color: var(--ink);
+      font-variation-settings: "opsz" 14;
+      letter-spacing: -0.005em;
+    }
+
+    .guide p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      line-height: 1.55;
+    }
+
+    .guide p strong {
+      color: var(--ink);
       font-weight: 600;
     }
 
-    /* Footer */
-    .footer {
-      text-align: center;
-      margin-top: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--color-border-subtle);
-      font-size: 0.75rem;
-      color: var(--color-text-tertiary);
+    /* On smaller screens, sidebar moves below editor */
+    @media (max-width: 919px) {
+      .specs-section { order: 2; }
+      .editor { order: 1; }
     }
 
-    .footer a {
-      color: var(--color-primary);
+    /* ===== Footer ===== */
+    .legal {
+      margin-top: clamp(2.5rem, 6vw, 4rem);
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--hairline);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
+      color: var(--ink-faint);
+      text-transform: uppercase;
+    }
+
+    .legal a {
+      color: var(--ink-muted);
       text-decoration: none;
-      transition: color 0.2s ease;
+      border-bottom: 1px solid var(--hairline);
+      transition: color 0.15s, border-color 0.15s;
     }
 
-    .footer a:hover {
-      color: var(--color-primary-hover);
+    .legal a:hover {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
     }
 
-    /* Entrance animation */
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(16px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    /* ===== Mobile sticky CTA ===== */
+    .sticky-cta {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.85rem var(--gutter) calc(0.85rem + env(safe-area-inset-bottom));
+      background: var(--paper-overlay);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid var(--hairline);
+      z-index: 50;
+      display: none;
     }
 
-    /* Mobile adjustments */
-    @media (max-width: 767px) {
-      body {
-        padding: 0.75rem;
-        padding: max(0.75rem, env(safe-area-inset-left)) max(0.75rem, env(safe-area-inset-right));
-      }
-
-      .app {
-        padding: 1rem;
-        border-top-width: 3px;
-      }
-
-      .header h1 {
-        font-size: 1.25rem;
-      }
-
-      .size-options {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        width: 100%;
-        max-width: 320px;
-      }
-
-      .size-option {
-        min-width: unset;
-      }
-
-      .steps {
-        gap: 0.4rem;
-      }
-
-      .step {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.75rem;
-      }
-
-      .sidebar {
-        order: -1;
-      }
-
-      .canvas-wrapper {
-        border-width: 2px;
-      }
-
-      .buttons {
-        flex-direction: column;
-      }
-
-      .buttons button {
-        width: 100%;
-      }
-
-      .canvas-wrapper {
-        max-width: 100%;
-      }
-
-      .controls {
-        max-width: 100%;
-      }
+    .sticky-cta .btn {
+      width: 100%;
     }
 
-    /* Touch devices */
+    @media (max-width: 919px) {
+      body.has-image .sticky-cta { display: block; }
+      body.has-image .inline-download { display: none; }
+      body.has-image { padding-bottom: 0; }
+      body.has-image .shell { padding-bottom: clamp(6rem, 14vw, 7rem); }
+    }
+
+    /* ===== Touch-only refinements ===== */
     @media (hover: none) {
-      button.primary::before {
-        display: none;
-      }
-
-      button.primary:active {
-        background: var(--color-primary-hover);
-        color: rgba(15, 6, 13, 1);
-      }
-
-      .size-option:active {
-        border-color: var(--color-primary);
-        transform: scale(0.97);
-      }
-
-      .size-option:hover {
-        transform: none;
-      }
+      .format-option:hover { background: transparent; }
+      .format-option:active { background: var(--surface-sunken); }
     }
 
-    /* Reduced motion */
+    /* ===== Reduced motion ===== */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
       }
+      .success-stamp { animation: none; }
+    }
 
-      .header, .size-selector, .steps, .layout, .sidebar {
-        animation: none !important;
-        opacity: 1 !important;
-        transform: none !important;
-      }
-
-      button.primary::before {
-        display: none;
-      }
+    /* Mobile fine-tuning */
+    @media (max-width: 480px) {
+      .hero-headline { font-size: clamp(2.1rem, 9vw, 2.8rem); }
+      .specs { padding: 1.25rem 1.1rem 1.1rem; }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <!-- Header -->
-    <header class="header">
-      <h1>Passport Photo Maker</h1>
+  <div class="shell">
+
+    <header class="masthead">
+      <div class="brand-mark">PASSPORT PHOTO · FORM A-01</div>
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
-        <svg class="theme-icon theme-icon-auto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="theme-icon theme-icon-auto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
-        <svg class="theme-icon theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="theme-icon theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
-        <svg class="theme-icon theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="theme-icon theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
-      <div class="privacy-banner">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        100% Private - Your photo never leaves your device
-      </div>
     </header>
 
-    <!-- Photo Size Selector -->
-    <div class="size-selector">
-      <div class="size-selector-label">Select Photo Size</div>
-      <div class="size-options" id="sizeOptions">
-        <button type="button" class="size-option active" data-format="icao">
-          <span class="size-option-flag">🌍</span>
-          <span class="size-option-country">International</span>
-          <span class="size-option-dims">35 × 45 mm</span>
-        </button>
-        <button type="button" class="size-option" data-format="usa">
-          <span class="size-option-flag">🇺🇸</span>
-          <span class="size-option-country">USA</span>
-          <span class="size-option-dims">2 × 2 in</span>
-        </button>
-        <button type="button" class="size-option" data-format="canada">
-          <span class="size-option-flag">🇨🇦</span>
-          <span class="size-option-country">Canada</span>
-          <span class="size-option-dims">50 × 70 mm</span>
-        </button>
-        <button type="button" class="size-option" data-format="custom">
-          <span class="size-option-flag">⚙️</span>
-          <span class="size-option-country">Custom</span>
-          <span class="size-option-dims">Set your own</span>
-        </button>
-      </div>
-      <div class="custom-inputs" id="customInputs">
-        <div class="custom-input-row">
-          <label for="customWidth">Width</label>
-          <input type="number" id="customWidth" min="20" max="100" value="35" />
-          <span>mm</span>
-        </div>
-        <div class="custom-input-row">
-          <label for="customHeight">Height</label>
-          <input type="number" id="customHeight" min="20" max="100" value="45" />
-          <span>mm</span>
-        </div>
-        <div class="custom-hint">Min: 20mm, Max: 100mm per side</div>
-        <div class="custom-error" id="customError"></div>
-        <button type="button" class="custom-apply-btn" id="customApplyBtn">Apply Size</button>
-      </div>
-    </div>
+    <section class="hero">
+      <h1 class="hero-headline">Free passport photo maker.</h1>
+      <p class="hero-lede">Crop to official dimensions, align your face with the on-photo guides, and compress under 1&nbsp;MB at 300 DPI &mdash; without losing the resolution your application requires. ICAO, USA, Canada, or custom sizes.</p>
+      <div class="hero-meta">100% local · no uploads · no tracking</div>
+    </section>
 
-    <!-- Steps -->
-    <nav class="steps" role="navigation" aria-label="Progress">
-      <div class="step active" id="step1" data-step="1">
-        <span class="step-number">1</span>
-        Upload
+    <section class="format-section">
+      <div class="section-eyebrow">01 — Specification</div>
+      <div class="format-row" id="sizeOptions" role="radiogroup" aria-label="Photo format">
+        <button type="button" class="format-option active" data-format="icao" role="radio" aria-checked="true">
+          <span class="format-code">INT</span>
+          <span class="format-name">International</span>
+          <span class="format-dims">35 × 45 mm</span>
+        </button>
+        <button type="button" class="format-option" data-format="usa" role="radio" aria-checked="false">
+          <span class="format-code">USA</span>
+          <span class="format-name">United States</span>
+          <span class="format-dims">2 × 2 in</span>
+        </button>
+        <button type="button" class="format-option" data-format="canada" role="radio" aria-checked="false">
+          <span class="format-code">CAN</span>
+          <span class="format-name">Canada</span>
+          <span class="format-dims">50 × 70 mm</span>
+        </button>
+        <button type="button" class="format-option" data-format="custom" role="radio" aria-checked="false">
+          <span class="format-code">CUS</span>
+          <span class="format-name">Custom</span>
+          <span class="format-dims">Set your own</span>
+        </button>
       </div>
-      <div class="step" id="step2" data-step="2">
-        <span class="step-number">2</span>
-        Adjust
+      <div class="custom-fields" id="customInputs">
+        <div class="custom-field">
+          <label for="customWidth">Width</label>
+          <input type="number" id="customWidth" min="20" max="100" value="35" inputmode="numeric" />
+        </div>
+        <span class="custom-times" aria-hidden="true">×</span>
+        <div class="custom-field">
+          <label for="customHeight">Height</label>
+          <input type="number" id="customHeight" min="20" max="100" value="45" inputmode="numeric" />
+        </div>
+        <span class="custom-unit" aria-hidden="true">mm</span>
+        <button type="button" class="custom-apply" id="customApplyBtn">Apply</button>
+        <p class="custom-hint">Min 20 mm — max 100 mm per side</p>
+        <p class="custom-error" id="customError" role="alert"></p>
       </div>
-      <div class="step" id="step3" data-step="3">
-        <span class="step-number">3</span>
-        Download
-      </div>
+    </section>
+
+    <nav class="progress" aria-label="Progress">
+      <ol class="progress-steps">
+        <li class="step active" id="step1" data-step="1">
+          <span class="step-mark" aria-hidden="true"></span>
+          <span class="step-label">Upload</span>
+        </li>
+        <li class="step" id="step2" data-step="2">
+          <span class="step-mark" aria-hidden="true"></span>
+          <span class="step-label">Adjust</span>
+        </li>
+        <li class="step" id="step3" data-step="3">
+          <span class="step-mark" aria-hidden="true"></span>
+          <span class="step-label">Download</span>
+        </li>
+      </ol>
     </nav>
 
-    <!-- Main layout -->
-    <div class="layout">
-      <!-- Editor -->
+    <div class="workspace">
       <main class="editor">
+        <div class="section-eyebrow">02 — Photograph</div>
+
         <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Upload photo">
-          <div class="drop-zone-content">
+          <div class="drop-zone-empty">
             <svg class="drop-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            <div class="drop-zone-text">
-              <strong>Click to upload</strong> or drag and drop
-            </div>
-            <div class="drop-zone-hint">PNG, JPG up to 10MB</div>
+            <div class="drop-zone-text"><strong>Click to upload</strong> or drag &amp; drop</div>
+            <div class="drop-zone-hint">PNG · JPG · HEIC · ≤ 10 MB</div>
           </div>
 
           <div class="canvas-container">
-            <div class="canvas-wrapper" id="canvasWrapper">
-              <canvas id="photoCanvas" width="413" height="531"></canvas>
-              <div class="loading-overlay" id="loadingOverlay">
-                <div class="spinner"></div>
-                <div class="loading-text" id="loadingText">Processing...</div>
-              </div>
-              <div class="success-overlay" id="successOverlay">
-                <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-                <div class="success-text">Photo Downloaded!</div>
+            <div class="canvas-stage">
+              <div class="canvas-mat">
+                <div class="canvas-serial" aria-hidden="true">
+                  <span>SPECIMEN</span>
+                  <span id="serialDims">35 × 45 mm</span>
+                </div>
+                <div class="canvas-wrapper" id="canvasWrapper">
+                  <canvas id="photoCanvas" width="413" height="531"></canvas>
+                  <div class="loading-overlay" id="loadingOverlay">
+                    <div class="spinner"></div>
+                    <div class="loading-text" id="loadingText">Processing</div>
+                  </div>
+                  <div class="success-overlay" id="successOverlay">
+                    <div class="success-stamp">Issued</div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <button class="change-photo-btn" id="changePhotoBtn" type="button">
-              Change photo
-            </button>
+            <button class="change-photo-link" id="changePhotoBtn" type="button">↺ Replace photo</button>
 
-            <div class="controls" id="controls">
-              <div class="control-row">
-                <label for="zoomRange">
-                  Zoom
-                  <span id="zoomLabel">1.00x</span>
-                </label>
-                <input
-                  type="range"
-                  id="zoomRange"
-                  min="0.5"
-                  max="3"
-                  step="0.01"
-                  value="1"
-                  aria-describedby="zoomHint"
-                />
+            <div class="toolbar">
+              <div class="toolbar-row">
+                <div class="label-row">
+                  <span>Zoom</span>
+                  <span class="value" id="zoomLabel">1.00x</span>
+                </div>
+                <input type="range" id="zoomRange" min="0.5" max="3" step="0.01" value="1" aria-describedby="zoomHint" />
               </div>
 
-              <div class="control-hint" id="zoomHint">
-                Drag the photo to reposition, or use slider to zoom
-              </div>
+              <p class="toolbar-hint" id="zoomHint">
+                Drag to position · pinch or slide to zoom
+              </p>
 
-              <div class="buttons">
-                <button class="secondary" id="resetBtn" type="button">
-                  Reset
-                </button>
-                <button class="primary" id="downloadBtn" type="button">
-                  Download JPEG
-                </button>
+              <div class="button-row">
+                <button class="btn btn-secondary" id="resetBtn" type="button">Reset</button>
+                <button class="btn btn-primary inline-download" id="downloadBtn" type="button">Download JPEG</button>
               </div>
 
               <div class="status" id="statusMsg" role="status" aria-live="polite"></div>
-              <div class="output-info" id="outputInfo">35x45mm | 300 DPI | Under 1 MB</div>
+              <div class="output-info" id="outputInfo">35 × 45 mm · 300 DPI · &lt;1 MB</div>
             </div>
           </div>
 
-          <input
-            type="file"
-            id="fileInput"
-            class="file-input"
-            accept="image/*,.heic,.heif"
-          />
+          <input type="file" id="fileInput" class="file-input" accept="image/*,.heic,.heif" />
         </div>
       </main>
 
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <div class="sidebar-card">
-          <h3 class="sidebar-title">Photo Specifications</h3>
+      <aside class="specs-section">
+        <div class="section-eyebrow">03 — Specifications</div>
+        <article class="specs">
+          <h2 class="specs-title" id="specsHeading">International (ICAO)</h2>
+          <p class="specs-desc" id="specsDesc">EU, UK, Australia, Schengen, most countries.</p>
 
-          <div class="spec-badges" id="specBadges">
-            <span class="spec-badge">35 × 45 mm</span>
-            <span class="spec-badge">300 DPI</span>
-            <span class="spec-badge">JPEG</span>
-            <span class="spec-badge">&lt; 1 MB</span>
+          <dl class="specs-grid" id="specBadges">
+            <dt>Size</dt><dd>35 × 45 mm</dd>
+            <dt>Pixels</dt><dd>413 × 531</dd>
+            <dt>Resolution</dt><dd>300 DPI</dd>
+            <dt>Format</dt><dd>JPEG · &lt;1 MB</dd>
+          </dl>
+
+          <div class="guide">
+            <h3>Position your face</h3>
+            <p>Align your <strong>eyes within the green band</strong>. Your face should fit between the two ovals (chin to crown).</p>
           </div>
 
-          <div class="guide-section">
-            <h4>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 16v-4"/>
-                <path d="M12 8h.01"/>
-              </svg>
-              Face Position
-            </h4>
-            <p>Position your <strong>eyes within the green zone</strong>. Your face (chin to crown) should fit within the oval guides.</p>
+          <div class="guide">
+            <h3>Photo conditions</h3>
+            <p>Plain light background. Camera at eye level. Neutral expression. Even, frontal lighting.</p>
           </div>
 
-          <div class="guide-section">
-            <h4>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                <circle cx="12" cy="13" r="3"/>
-              </svg>
-              Photo Tips
-            </h4>
-            <p>Use a plain light background, face the camera directly, keep a neutral expression, and ensure even lighting.</p>
+          <div class="guide">
+            <h3>Privacy</h3>
+            <p>All processing happens on your device. No uploads. No cookies. No tracking.</p>
           </div>
-
-          <div class="guide-section">
-            <h4>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              Your Privacy
-            </h4>
-            <p>This tool runs entirely in your browser. Your photos are never uploaded to any server.</p>
-          </div>
-        </div>
+        </article>
       </aside>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer" id="footerText">
-      ICAO/ISO compliant passport photo format
+    <footer class="legal">
+      <span id="footerText">ICAO/ISO compliant passport photo format</span>
+      <span>Open source · MIT</span>
     </footer>
+  </div>
+
+  <!-- Mobile sticky CTA -->
+  <div class="sticky-cta" aria-hidden="false">
+    <button class="btn btn-primary" id="stickyDownloadBtn" type="button">Download JPEG</button>
   </div>
 
   <script>
@@ -1243,11 +1284,15 @@
     const zoomLabel = document.getElementById("zoomLabel");
     const resetBtn = document.getElementById("resetBtn");
     const downloadBtn = document.getElementById("downloadBtn");
+    const stickyDownloadBtn = document.getElementById("stickyDownloadBtn");
     const statusMsg = document.getElementById("statusMsg");
     const outputInfo = document.getElementById("outputInfo");
     const steps = document.querySelectorAll(".step");
-    const sizeOptions = document.querySelectorAll(".size-option");
+    const sizeOptions = document.querySelectorAll(".format-option");
     const specBadges = document.getElementById("specBadges");
+    const specsHeading = document.getElementById("specsHeading");
+    const specsDesc = document.getElementById("specsDesc");
+    const serialDims = document.getElementById("serialDims");
     const footerText = document.getElementById("footerText");
     const customInputs = document.getElementById("customInputs");
     const customWidth = document.getElementById("customWidth");
@@ -1262,44 +1307,39 @@
         country: "International",
         widthMm: 35,
         heightMm: 45,
-        widthPx: 413,   // 35mm at 300 DPI
-        heightPx: 531,  // 45mm at 300 DPI
+        widthPx: 413,
+        heightPx: 531,
         faceMinMm: 32,
         faceMaxMm: 36,
-        // UK HMPO: eyes 29-34mm from bottom of 45mm photo = 11-16mm from top = 24-36%.
-        // Widened slightly to 27-40% for Schengen/EU tolerance.
         eyeZoneTopPct: 0.27,
         eyeZoneBottomPct: 0.40,
-        description: "EU, UK, Australia, Schengen, most countries"
+        description: "EU, UK, Australia, Schengen, most countries."
       },
       usa: {
-        name: "USA",
+        name: "United States",
         country: "USA",
         widthMm: 51,
         heightMm: 51,
-        widthPx: 600,   // 2 inches at 300 DPI
+        widthPx: 600,
         heightPx: 600,
         faceMinMm: 25,
         faceMaxMm: 35,
-        // US State Dept: eyes 28-35mm from bottom of 51mm = 31.4-45.1% from top.
         eyeZoneTopPct: 0.31,
         eyeZoneBottomPct: 0.45,
-        description: "US Passport & Visa (2×2 inches)"
+        description: "US Passport & Visa (2 × 2 in)."
       },
       canada: {
         name: "Canada",
         country: "Canada",
         widthMm: 50,
         heightMm: 70,
-        widthPx: 591,   // 50mm at 300 DPI
-        heightPx: 827,  // 70mm at 300 DPI
+        widthPx: 591,
+        heightPx: 827,
         faceMinMm: 31,
         faceMaxMm: 36,
-        // IRCC requires head in upper portion. Crown ~3-8mm from top + eye at ~45% of
-        // face height from crown puts the eye band at ~22-34% from top of 70mm photo.
         eyeZoneTopPct: 0.22,
         eyeZoneBottomPct: 0.34,
-        description: "Canadian Passport (50×70 mm)"
+        description: "Canadian Passport (50 × 70 mm)."
       },
       custom: {
         name: "Custom",
@@ -1313,24 +1353,16 @@
         eyeZoneTopPct: 0.27,
         eyeZoneBottomPct: 0.40,
         noOverlay: true,
-        description: "Custom size"
+        description: "Custom size — overlay disabled."
       }
     };
 
-    // Size limits for custom format
-    const CUSTOM_SIZE_LIMITS = {
-      minMm: 20,
-      maxMm: 100
-    };
-
-    // Current format state
+    const CUSTOM_SIZE_LIMITS = { minMm: 20, maxMm: 100 };
     let currentFormat = PHOTO_FORMATS.icao;
 
-    // ==================== Constants ====================
     const TARGET_DPI = 300;
     const MAX_BYTES = 1_000_000;
 
-    // Offscreen canvas for export
     const exportCanvas = document.createElement("canvas");
     const exportCtx = exportCanvas.getContext("2d");
     exportCanvas.width = currentFormat.widthPx;
@@ -1355,53 +1387,54 @@
     };
 
     // ==================== Format Switching ====================
+    function formatDimsText(format) {
+      return format.widthMm === 51
+        ? "2 × 2 in"
+        : `${format.widthMm} × ${format.heightMm} mm`;
+    }
+
     function switchFormat(formatKey, skipCustomInputs = false) {
       if (!PHOTO_FORMATS[formatKey]) return;
 
       currentFormat = PHOTO_FORMATS[formatKey];
 
-      // Update canvas dimensions
       canvas.width = currentFormat.widthPx;
       canvas.height = currentFormat.heightPx;
       exportCanvas.width = currentFormat.widthPx;
       exportCanvas.height = currentFormat.heightPx;
 
-      // Update UI selection
       sizeOptions.forEach(opt => {
-        opt.classList.toggle("active", opt.dataset.format === formatKey);
+        const isActive = opt.dataset.format === formatKey;
+        opt.classList.toggle("active", isActive);
+        opt.setAttribute("aria-checked", isActive ? "true" : "false");
       });
 
-      // Show/hide custom inputs
       if (!skipCustomInputs) {
         customInputs.classList.toggle("visible", formatKey === "custom");
         customError.textContent = "";
       }
 
-      // Update spec badges in sidebar
+      const dimsText = formatDimsText(currentFormat);
+
       if (specBadges) {
-        const sizeText = currentFormat.widthMm === 51
-          ? "2 × 2 in"
-          : `${currentFormat.widthMm} × ${currentFormat.heightMm} mm`;
         specBadges.innerHTML = `
-          <span class="spec-badge">${sizeText}</span>
-          <span class="spec-badge">300 DPI</span>
-          <span class="spec-badge">JPEG</span>
-          <span class="spec-badge">&lt; 1 MB</span>
+          <dt>Size</dt><dd>${dimsText}</dd>
+          <dt>Pixels</dt><dd>${currentFormat.widthPx} × ${currentFormat.heightPx}</dd>
+          <dt>Resolution</dt><dd>300 DPI</dd>
+          <dt>Format</dt><dd>JPEG · &lt;1 MB</dd>
         `;
       }
 
-      // Update output info
-      const dimsText = currentFormat.widthMm === 51
-        ? "2×2 in"
-        : `${currentFormat.widthMm}×${currentFormat.heightMm}mm`;
-      outputInfo.textContent = `${dimsText} | 300 DPI | Under 1 MB`;
+      if (specsHeading) specsHeading.textContent = currentFormat.name;
+      if (specsDesc) specsDesc.textContent = currentFormat.description;
+      if (serialDims) serialDims.textContent = dimsText;
 
-      // Update footer
+      outputInfo.textContent = `${dimsText} · 300 DPI · <1 MB`;
+
       if (footerText) {
         footerText.textContent = currentFormat.description;
       }
 
-      // Re-fit image if one is loaded
       if (state.img) {
         fitImageToCanvas(state.img);
         checkResolutionWarning();
@@ -1410,74 +1443,59 @@
       }
     }
 
-    // Apply custom size
     function applyCustomSize() {
       const widthMm = parseInt(customWidth.value, 10);
       const heightMm = parseInt(customHeight.value, 10);
 
-      // Validation
       if (isNaN(widthMm) || isNaN(heightMm)) {
         customError.textContent = "Please enter valid numbers";
         return false;
       }
 
       if (widthMm < CUSTOM_SIZE_LIMITS.minMm || widthMm > CUSTOM_SIZE_LIMITS.maxMm) {
-        customError.textContent = `Width must be ${CUSTOM_SIZE_LIMITS.minMm}-${CUSTOM_SIZE_LIMITS.maxMm}mm`;
+        customError.textContent = `Width must be ${CUSTOM_SIZE_LIMITS.minMm}–${CUSTOM_SIZE_LIMITS.maxMm} mm`;
         return false;
       }
 
       if (heightMm < CUSTOM_SIZE_LIMITS.minMm || heightMm > CUSTOM_SIZE_LIMITS.maxMm) {
-        customError.textContent = `Height must be ${CUSTOM_SIZE_LIMITS.minMm}-${CUSTOM_SIZE_LIMITS.maxMm}mm`;
+        customError.textContent = `Height must be ${CUSTOM_SIZE_LIMITS.minMm}–${CUSTOM_SIZE_LIMITS.maxMm} mm`;
         return false;
       }
 
       customError.textContent = "";
 
-      // Calculate pixels at 300 DPI (1 inch = 25.4mm)
       const widthPx = Math.round((widthMm / 25.4) * 300);
       const heightPx = Math.round((heightMm / 25.4) * 300);
 
-      // Calculate sensible face height defaults (70-80% of photo height)
       const faceMinMm = Math.round(heightMm * 0.70);
       const faceMaxMm = Math.round(heightMm * 0.80);
 
-      // Eye zone defaults (30-42% from top works for most formats)
       const eyeZoneTopPct = 0.30;
       const eyeZoneBottomPct = 0.42;
 
-      // Update custom format
       PHOTO_FORMATS.custom = {
         name: "Custom",
         country: "Custom",
-        widthMm: widthMm,
-        heightMm: heightMm,
-        widthPx: widthPx,
-        heightPx: heightPx,
-        faceMinMm: faceMinMm,
-        faceMaxMm: faceMaxMm,
-        eyeZoneTopPct: eyeZoneTopPct,
-        eyeZoneBottomPct: eyeZoneBottomPct,
+        widthMm,
+        heightMm,
+        widthPx,
+        heightPx,
+        faceMinMm,
+        faceMaxMm,
+        eyeZoneTopPct,
+        eyeZoneBottomPct,
         noOverlay: true,
-        description: `Custom size (${widthMm}×${heightMm} mm)`
+        description: `Custom (${widthMm} × ${heightMm} mm) — overlay disabled.`
       };
 
-      // Apply the format
       switchFormat("custom", true);
       return true;
     }
 
-    // Custom apply button handler
     customApplyBtn.addEventListener("click", applyCustomSize);
+    customWidth.addEventListener("keydown", (e) => { if (e.key === "Enter") applyCustomSize(); });
+    customHeight.addEventListener("keydown", (e) => { if (e.key === "Enter") applyCustomSize(); });
 
-    // Allow Enter key in custom inputs
-    customWidth.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") applyCustomSize();
-    });
-    customHeight.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") applyCustomSize();
-    });
-
-    // Size option click handlers
     sizeOptions.forEach(opt => {
       opt.addEventListener("click", () => {
         const formatKey = opt.dataset.format;
@@ -1499,11 +1517,8 @@
       steps.forEach((step, i) => {
         const num = i + 1;
         step.classList.remove("active", "completed");
-        if (num < stepNum) {
-          step.classList.add("completed");
-        } else if (num === stepNum) {
-          step.classList.add("active");
-        }
+        if (num < stepNum) step.classList.add("completed");
+        else if (num === stepNum) step.classList.add("active");
       });
     }
 
@@ -1518,7 +1533,7 @@
       statusMsg.className = `status ${type}`;
     }
 
-    function showLoading(text = "Processing...") {
+    function showLoading(text = "Processing") {
       loadingText.textContent = text;
       loadingOverlay.classList.add("visible");
     }
@@ -1529,9 +1544,7 @@
 
     function showSuccess() {
       successOverlay.classList.add("visible");
-      setTimeout(() => {
-        successOverlay.classList.remove("visible");
-      }, 2000);
+      setTimeout(() => successOverlay.classList.remove("visible"), 1600);
     }
 
     // ==================== Image Processing ====================
@@ -1539,18 +1552,16 @@
       const buffer = await blob.arrayBuffer();
       const data = new Uint8Array(buffer);
 
-      // Must start with SOI (0xFFD8); otherwise it's not a JPEG we can patch.
       if (data.length < 4 || data[0] !== 0xFF || data[1] !== 0xD8) {
         return new Blob([data], { type: "image/jpeg" });
       }
 
-      // Try to patch an existing JFIF APP0 segment (between SOI and SOS).
       for (let i = 2; i < data.length - 16; i++) {
-        if (data[i] === 0xFF && data[i + 1] === 0xDA) break; // SOS reached
+        if (data[i] === 0xFF && data[i + 1] === 0xDA) break;
         if (data[i] === 0xFF && data[i + 1] === 0xE0 &&
             data[i + 4] === 0x4A && data[i + 5] === 0x46 &&
             data[i + 6] === 0x49 && data[i + 7] === 0x46 && data[i + 8] === 0x00) {
-          data[i + 11] = 1; // units = DPI
+          data[i + 11] = 1;
           data[i + 12] = (dpi >> 8) & 0xFF;
           data[i + 13] = dpi & 0xFF;
           data[i + 14] = (dpi >> 8) & 0xFF;
@@ -1559,7 +1570,6 @@
         }
       }
 
-      // No JFIF found — inject a fresh APP0 segment immediately after SOI.
       const jfif = new Uint8Array([
         0xFF, 0xE0,
         0x00, 0x10,
@@ -1613,7 +1623,6 @@
       const w = context.canvas.width;
       const h = context.canvas.height;
 
-      // Custom format: just frame the photo, no face/eye guides.
       if (currentFormat.noOverlay) {
         context.save();
         context.strokeStyle = "rgba(31, 41, 55, 0.8)";
@@ -1623,25 +1632,20 @@
         return;
       }
 
-      // Use current format's measurements
       const pxPerMm = h / currentFormat.heightMm;
       const faceMinPx = currentFormat.faceMinMm * pxPerMm;
       const faceMaxPx = currentFormat.faceMaxMm * pxPerMm;
       const faceAvgPx = (faceMinPx + faceMaxPx) / 2;
 
-      // Eye zone from format config
       const eyeZoneTop = h * currentFormat.eyeZoneTopPct;
       const eyeZoneBottom = h * currentFormat.eyeZoneBottomPct;
       const eyeZoneHeight = eyeZoneBottom - eyeZoneTop;
 
-      // Eyes sit at ~45% of face height from crown, so face center is 5% of face
-      // height below the eye line.
       const eyeZoneCenter = (eyeZoneTop + eyeZoneBottom) / 2;
       const faceCenterY = eyeZoneCenter + faceAvgPx * 0.05;
 
       const centerX = w / 2;
 
-      // Face oval dimensions (width ~70% of height)
       const widthRatio = 0.7;
       const outerRy = faceMaxPx / 2;
       const outerRx = outerRy * widthRatio;
@@ -1650,18 +1654,15 @@
 
       context.save();
 
-      // Photo border
       context.strokeStyle = "rgba(31, 41, 55, 0.8)";
       context.lineWidth = 2;
       context.strokeRect(1, 1, w - 2, h - 2);
 
-      // Face zone fill (subtle)
       context.fillStyle = "rgba(37, 99, 235, 0.05)";
       context.beginPath();
       context.ellipse(centerX, faceCenterY, outerRx, outerRy, 0, 0, Math.PI * 2);
       context.fill();
 
-      // Outer oval (max face size - 36mm)
       context.strokeStyle = "rgba(37, 99, 235, 0.5)";
       context.lineWidth = 1.5;
       context.setLineDash([6, 4]);
@@ -1669,7 +1670,6 @@
       context.ellipse(centerX, faceCenterY, outerRx, outerRy, 0, 0, Math.PI * 2);
       context.stroke();
 
-      // Inner oval (min face size - 32mm)
       context.strokeStyle = "rgba(37, 99, 235, 0.3)";
       context.lineWidth = 1;
       context.beginPath();
@@ -1677,12 +1677,10 @@
       context.stroke();
       context.setLineDash([]);
 
-      // Eye zone - gradient band showing acceptable eye position range
       const eyeZoneWidth = outerRx * 1.5;
       const eyeZoneLeft = centerX - eyeZoneWidth / 2;
       const eyeZoneRight = centerX + eyeZoneWidth / 2;
 
-      // Create gradient for eye zone (stronger in middle, fading at edges)
       const gradient = context.createLinearGradient(0, eyeZoneTop, 0, eyeZoneBottom);
       gradient.addColorStop(0, "rgba(16, 185, 129, 0.0)");
       gradient.addColorStop(0.3, "rgba(16, 185, 129, 0.15)");
@@ -1693,38 +1691,35 @@
       context.fillStyle = gradient;
       context.fillRect(eyeZoneLeft, eyeZoneTop, eyeZoneWidth, eyeZoneHeight);
 
-      // Dotted rectangle border for eye zone
       context.strokeStyle = "rgba(16, 185, 129, 0.6)";
       context.lineWidth = 1.5;
       context.setLineDash([4, 4]);
       context.strokeRect(eyeZoneLeft, eyeZoneTop, eyeZoneWidth, eyeZoneHeight);
       context.setLineDash([]);
 
-      // Eye zone label
       context.fillStyle = "rgba(16, 185, 129, 0.9)";
-      context.font = "9px system-ui, sans-serif";
+      context.font = "9px ui-monospace, monospace";
       context.textAlign = "left";
       context.textBaseline = "middle";
-      context.fillText("eye zone", eyeZoneRight + 6, eyeZoneTop + eyeZoneHeight / 2);
+      context.fillText("EYE ZONE", eyeZoneRight + 6, eyeZoneTop + eyeZoneHeight / 2);
 
-      // Face size label
       context.fillStyle = "rgba(37, 99, 235, 0.7)";
-      context.font = "9px system-ui, sans-serif";
+      context.font = "9px ui-monospace, monospace";
       context.textAlign = "center";
-      context.fillText(`${currentFormat.faceMinMm}-${currentFormat.faceMaxMm}mm`, centerX, faceCenterY + outerRy + 12);
+      context.fillText(`${currentFormat.faceMinMm}–${currentFormat.faceMaxMm}mm`, centerX, faceCenterY + outerRy + 12);
 
       context.restore();
     }
 
     function drawEmptyPlaceholder() {
-      ctx.fillStyle = "#f3f4f6";
+      ctx.fillStyle = "#f5f1e8";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "#9ca3af";
-      ctx.font = "14px system-ui, sans-serif";
+      ctx.fillStyle = "#a3a3a3";
+      ctx.font = "11px ui-monospace, monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("Your photo will appear here", canvas.width / 2, canvas.height / 2);
+      ctx.fillText("AWAITING PHOTO", canvas.width / 2, canvas.height / 2);
 
       drawOverlay(ctx);
     }
@@ -1751,12 +1746,9 @@
 
       context.drawImage(state.img, drawX, drawY, imgDrawWidth, imgDrawHeight);
 
-      if (includeOverlay) {
-        drawOverlay(context);
-      }
+      if (includeOverlay) drawOverlay(context);
     }
 
-    // Throttled redraw using requestAnimationFrame
     function redraw() {
       if (!state.needsRender) {
         state.needsRender = true;
@@ -1767,17 +1759,12 @@
       }
     }
 
-    // Immediate redraw for when we need it right away
-    function redrawNow() {
-      render(ctx, true);
-    }
+    function redrawNow() { render(ctx, true); }
 
     function fitImageToCanvas(image) {
-      // Use naturalWidth/Height for actual image dimensions
       const imgW = image.naturalWidth || image.width;
       const imgH = image.naturalHeight || image.height;
 
-      // Store dimensions in state for fast access
       state.imgWidth = imgW;
       state.imgHeight = imgH;
 
@@ -1785,11 +1772,8 @@
       const imageRatio = imgW / imgH;
 
       let baseScale;
-      if (imageRatio > canvasRatio) {
-        baseScale = canvas.width / imgW;
-      } else {
-        baseScale = canvas.height / imgH;
-      }
+      if (imageRatio > canvasRatio) baseScale = canvas.width / imgW;
+      else baseScale = canvas.height / imgH;
 
       state.baseScale = baseScale;
       state.scale = baseScale;
@@ -1828,14 +1812,11 @@
       return Array.isArray(result) ? result[0] : result;
     }
 
-    // Decode a blob to something drawImage accepts. Prefers createImageBitmap with
-    // EXIF orientation; falls back to <img> for older browsers.
     async function loadBitmap(blob) {
       if (typeof createImageBitmap === "function") {
         try {
           return await createImageBitmap(blob, { imageOrientation: "from-image" });
         } catch (e) {
-          // Some browsers reject the imageOrientation option; retry without it.
           try {
             return await createImageBitmap(blob);
           } catch (_) { /* fall through to <img> */ }
@@ -1868,7 +1849,7 @@
       if (!state.img) return;
       if (state.baseScale > 1.05) {
         setStatus(
-          `Photo is lower resolution than ${currentFormat.widthPx}×${currentFormat.heightPx}px target. Output may appear soft.`,
+          `Source photo is below ${currentFormat.widthPx}×${currentFormat.heightPx}px. Output may appear soft.`,
           "warn"
         );
       } else if (statusMsg.classList.contains("warn")) {
@@ -1885,24 +1866,24 @@
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        setStatus("Image too large. Please use an image under 10MB.", "error");
+        setStatus("Image too large. Please use an image under 10 MB.", "error");
         return;
       }
 
       clearStatus();
-      showLoading(isHeic ? "Converting HEIC..." : "Loading image...");
+      showLoading(isHeic ? "Converting HEIC" : "Loading image");
 
       try {
         const blob = isHeic ? await convertHeic(file) : file;
         const bitmap = await loadBitmap(blob);
 
-        // Release the previous bitmap if it's an ImageBitmap.
         if (state.img && typeof state.img.close === "function") {
           state.img.close();
         }
 
         state.img = bitmap;
         dropZone.classList.add("has-image");
+        document.body.classList.add("has-image");
         fitImageToCanvas(bitmap);
         hideLoading();
         setStep(2);
@@ -1962,14 +1943,9 @@
       const rect = canvasWrapper.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-      };
+      return { x: clientX - rect.left, y: clientY - rect.top };
     }
 
-    // Clamp pan offsets so the image always covers the canvas. When the image is
-    // smaller than the canvas in a dimension, pin that axis to 0.
     function clampOffsets() {
       const imgDrawWidth = state.imgWidth * state.scale;
       const imgDrawHeight = state.imgHeight * state.scale;
@@ -1988,7 +1964,6 @@
     function startDrag(e) {
       if (!state.img) return;
 
-      // Two-finger touch: start a pinch-zoom gesture, suppress drag.
       if (e.touches && e.touches.length === 2) {
         e.preventDefault();
         state.isDragging = false;
@@ -1999,7 +1974,6 @@
         return;
       }
 
-      // Only start drag if clicking on canvas area
       if (e.target !== canvas && e.target !== canvasWrapper) return;
 
       e.preventDefault();
@@ -2014,7 +1988,6 @@
     }
 
     function moveDrag(e) {
-      // Pinch zoom takes priority while two fingers are down.
       if (state.pinch && e.touches && e.touches.length === 2) {
         e.preventDefault();
         const newDist = pinchDistance(e);
@@ -2044,7 +2017,6 @@
     }
 
     function endDrag(e) {
-      // End the pinch gesture once we drop below two fingers.
       if (state.pinch && (!e || !e.touches || e.touches.length < 2)) {
         state.pinch = null;
       }
@@ -2077,29 +2049,26 @@
       fitImageToCanvas(state.img);
     });
 
-
-    downloadBtn.addEventListener("click", async () => {
+    async function performDownload() {
       if (!state.img) {
         setStatus("Please upload a photo first.", "error");
         return;
       }
 
       clearStatus();
-      showLoading("Generating JPEG...");
+      showLoading("Generating JPEG");
       setStep(3);
 
       try {
         render(exportCtx, false);
-        const { blob: optimizedBlob, quality } = await findOptimalQuality(exportCanvas, MAX_BYTES);
+        const { blob: optimizedBlob } = await findOptimalQuality(exportCanvas, MAX_BYTES);
 
-        if (!optimizedBlob) {
-          throw new Error("Failed to generate image");
-        }
+        if (!optimizedBlob) throw new Error("Failed to generate image");
 
         const finalBlob = await patchJpegDpi(optimizedBlob, TARGET_DPI);
         const sizeKB = (finalBlob.size / 1024).toFixed(0);
 
-        outputInfo.textContent = `${currentFormat.widthPx}×${currentFormat.heightPx}px | ${TARGET_DPI} DPI | ${sizeKB} KB`;
+        outputInfo.textContent = `${currentFormat.widthPx}×${currentFormat.heightPx}px · 300 DPI · ${sizeKB} KB`;
 
         const url = URL.createObjectURL(finalBlob);
         const a = document.createElement("a");
@@ -2116,20 +2085,21 @@
         hideLoading();
         showSuccess();
         if (finalBlob.size > MAX_BYTES) {
-          setStatus(
-            `Downloaded — file is ${sizeKB} KB, over the 1 MB target. Try a smaller custom size.`,
-            "warn"
-          );
+          setStatus(`Downloaded — file is ${sizeKB} KB, over the 1 MB target. Try a smaller custom size.`, "warn");
         } else {
-          setStatus("Photo downloaded successfully!", "success");
+          setStatus("Photo downloaded successfully.", "success");
         }
-
       } catch (err) {
         hideLoading();
         setStatus("Download failed: " + err.message, "error");
         setStep(2);
       }
-    });
+    }
+
+    downloadBtn.addEventListener("click", performDownload);
+    if (stickyDownloadBtn) {
+      stickyDownloadBtn.addEventListener("click", performDownload);
+    }
 
     // ==================== Initialize ====================
     drawEmptyPlaceholder();
@@ -2152,11 +2122,8 @@
         localStorage.setItem('theme', setting);
         root.setAttribute('data-theme-setting', setting);
         var dark = setting === 'dark' || (setting === 'auto' && mql.matches);
-        if (dark) {
-          root.setAttribute('data-theme', 'dark');
-        } else {
-          root.removeAttribute('data-theme');
-        }
+        if (dark) root.setAttribute('data-theme', 'dark');
+        else root.removeAttribute('data-theme');
       }
 
       toggle.addEventListener('click', function() {
@@ -2169,7 +2136,6 @@
         if (getSetting() === 'auto') applyTheme('auto');
       });
 
-      // Initialize icon state on load
       applyTheme(getSetting());
     })();
   </script>
