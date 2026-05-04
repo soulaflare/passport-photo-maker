@@ -1163,7 +1163,6 @@
             id="fileInput"
             class="file-input"
             accept="image/*"
-            capture="environment"
           />
         </div>
       </main>
@@ -1261,9 +1260,10 @@
         heightPx: 531,  // 45mm at 300 DPI
         faceMinMm: 32,
         faceMaxMm: 36,
-        // Eye zone: 28-42% from top
-        eyeZoneTopPct: 0.28,
-        eyeZoneBottomPct: 0.42,
+        // UK HMPO: eyes 29-34mm from bottom of 45mm photo = 11-16mm from top = 24-36%.
+        // Widened slightly to 27-40% for Schengen/EU tolerance.
+        eyeZoneTopPct: 0.27,
+        eyeZoneBottomPct: 0.40,
         description: "EU, UK, Australia, Schengen, most countries"
       },
       usa: {
@@ -1275,9 +1275,9 @@
         heightPx: 600,
         faceMinMm: 25,
         faceMaxMm: 35,
-        // Eyes 28-35mm from bottom of 51mm = 31-44% from top
+        // US State Dept: eyes 28-35mm from bottom of 51mm = 31.4-45.1% from top.
         eyeZoneTopPct: 0.31,
-        eyeZoneBottomPct: 0.44,
+        eyeZoneBottomPct: 0.45,
         description: "US Passport & Visa (2×2 inches)"
       },
       canada: {
@@ -1289,9 +1289,10 @@
         heightPx: 827,  // 70mm at 300 DPI
         faceMinMm: 31,
         faceMaxMm: 36,
-        // Face positioned in upper portion, eyes ~31-43% from top
-        eyeZoneTopPct: 0.31,
-        eyeZoneBottomPct: 0.43,
+        // IRCC requires head in upper portion. Crown ~3-8mm from top + eye at ~45% of
+        // face height from crown puts the eye band at ~22-34% from top of 70mm photo.
+        eyeZoneTopPct: 0.22,
+        eyeZoneBottomPct: 0.34,
         description: "Canadian Passport (50×70 mm)"
       },
       custom: {
@@ -1303,8 +1304,9 @@
         heightPx: 531,
         faceMinMm: 32,
         faceMaxMm: 36,
-        eyeZoneTopPct: 0.28,
-        eyeZoneBottomPct: 0.42,
+        eyeZoneTopPct: 0.27,
+        eyeZoneBottomPct: 0.40,
+        noOverlay: true,
         description: "Custom size"
       }
     };
@@ -1342,6 +1344,7 @@
       dragStartY: 0,
       dragOffsetX: 0,
       dragOffsetY: 0,
+      pinch: null,
       needsRender: false,
     };
 
@@ -1447,6 +1450,7 @@
         faceMaxMm: faceMaxMm,
         eyeZoneTopPct: eyeZoneTopPct,
         eyeZoneBottomPct: eyeZoneBottomPct,
+        noOverlay: true,
         description: `Custom size (${widthMm}×${heightMm} mm)`
       };
 
@@ -1581,19 +1585,31 @@
       const w = context.canvas.width;
       const h = context.canvas.height;
 
+      // Custom format: just frame the photo, no face/eye guides.
+      if (currentFormat.noOverlay) {
+        context.save();
+        context.strokeStyle = "rgba(31, 41, 55, 0.8)";
+        context.lineWidth = 2;
+        context.strokeRect(1, 1, w - 2, h - 2);
+        context.restore();
+        return;
+      }
+
       // Use current format's measurements
       const pxPerMm = h / currentFormat.heightMm;
       const faceMinPx = currentFormat.faceMinMm * pxPerMm;
       const faceMaxPx = currentFormat.faceMaxMm * pxPerMm;
+      const faceAvgPx = (faceMinPx + faceMaxPx) / 2;
 
       // Eye zone from format config
       const eyeZoneTop = h * currentFormat.eyeZoneTopPct;
       const eyeZoneBottom = h * currentFormat.eyeZoneBottomPct;
       const eyeZoneHeight = eyeZoneBottom - eyeZoneTop;
 
-      // Face oval center: positioned based on eye zone center
+      // Eyes sit at ~45% of face height from crown, so face center is 5% of face
+      // height below the eye line.
       const eyeZoneCenter = (eyeZoneTop + eyeZoneBottom) / 2;
-      const faceCenterY = eyeZoneCenter + (faceMaxPx * 0.08);
+      const faceCenterY = eyeZoneCenter + faceAvgPx * 0.05;
 
       const centerX = w / 2;
 
@@ -1840,13 +1856,43 @@
       };
     }
 
+    // Clamp pan offsets so the image always covers the canvas. When the image is
+    // smaller than the canvas in a dimension, pin that axis to 0.
+    function clampOffsets() {
+      const imgDrawWidth = state.imgWidth * state.scale;
+      const imgDrawHeight = state.imgHeight * state.scale;
+      const maxOffsetX = Math.max(0, (imgDrawWidth - canvas.width) / 2);
+      const maxOffsetY = Math.max(0, (imgDrawHeight - canvas.height) / 2);
+      state.offsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, state.offsetX));
+      state.offsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, state.offsetY));
+    }
+
+    function pinchDistance(e) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      return Math.hypot(dx, dy);
+    }
+
     function startDrag(e) {
       if (!state.img) return;
+
+      // Two-finger touch: start a pinch-zoom gesture, suppress drag.
+      if (e.touches && e.touches.length === 2) {
+        e.preventDefault();
+        state.isDragging = false;
+        state.pinch = {
+          startDist: pinchDistance(e),
+          startScale: state.scale,
+        };
+        return;
+      }
+
       // Only start drag if clicking on canvas area
       if (e.target !== canvas && e.target !== canvasWrapper) return;
 
       e.preventDefault();
       state.isDragging = true;
+      state.pinch = null;
       const pos = getPointerPosition(e);
       state.dragStartX = pos.x;
       state.dragStartY = pos.y;
@@ -1856,16 +1902,40 @@
     }
 
     function moveDrag(e) {
+      // Pinch zoom takes priority while two fingers are down.
+      if (state.pinch && e.touches && e.touches.length === 2) {
+        e.preventDefault();
+        const newDist = pinchDistance(e);
+        if (newDist <= 0) return;
+        const ratio = newDist / state.pinch.startDist;
+        const minScale = state.baseScale * 0.5;
+        const maxScale = state.baseScale * 3;
+        state.scale = Math.max(minScale, Math.min(maxScale, state.pinch.startScale * ratio));
+
+        const multiplier = state.scale / state.baseScale;
+        zoomRange.value = multiplier.toFixed(2);
+        zoomLabel.textContent = multiplier.toFixed(2) + "x";
+
+        clampOffsets();
+        redraw();
+        return;
+      }
+
       if (!state.isDragging) return;
       e.preventDefault();
       const pos = getPointerPosition(e);
       const scaleRatio = canvas.width / canvasWrapper.offsetWidth;
       state.offsetX = state.dragOffsetX + (pos.x - state.dragStartX) * scaleRatio;
       state.offsetY = state.dragOffsetY + (pos.y - state.dragStartY) * scaleRatio;
+      clampOffsets();
       redraw();
     }
 
-    function endDrag() {
+    function endDrag(e) {
+      // End the pinch gesture once we drop below two fingers.
+      if (state.pinch && (!e || !e.touches || e.touches.length < 2)) {
+        state.pinch = null;
+      }
       if (state.isDragging) {
         state.isDragging = false;
         canvasWrapper.style.cursor = "grab";
@@ -1885,6 +1955,7 @@
       const multiplier = parseFloat(zoomRange.value);
       state.scale = state.baseScale * multiplier;
       zoomLabel.textContent = multiplier.toFixed(2) + "x";
+      clampOffsets();
       redraw();
     });
 
