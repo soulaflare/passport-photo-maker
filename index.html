@@ -28,6 +28,7 @@
       --color-success: #059669;
       --color-success-bg: rgba(5, 150, 105, 0.08);
       --color-error: #ef4444;
+      --color-warn: #b45309;
       --surface-app: #f5f3f4;
       --surface-card: #ffffff;
       --surface-input: #f9f8f9;
@@ -58,6 +59,7 @@
     }
 
     [data-theme="dark"] {
+      --color-warn: #f59e0b;
       --color-primary-glow: rgba(196, 33, 33, 0.4);
       --color-primary-muted: rgba(196, 33, 33, 0.15);
       --color-success-bg: rgba(5, 150, 105, 0.12);
@@ -791,6 +793,10 @@
       color: var(--color-error);
     }
 
+    .status.warn {
+      color: var(--color-warn);
+    }
+
     .output-info {
       text-align: center;
       font-size: 0.75rem;
@@ -1162,7 +1168,7 @@
             type="file"
             id="fileInput"
             class="file-input"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
           />
         </div>
       </main>
@@ -1398,6 +1404,7 @@
       // Re-fit image if one is loaded
       if (state.img) {
         fitImageToCanvas(state.img);
+        checkResolutionWarning();
       } else {
         drawEmptyPlaceholder();
       }
@@ -1532,21 +1539,42 @@
       const buffer = await blob.arrayBuffer();
       const data = new Uint8Array(buffer);
 
-      for (let i = 0; i < data.length - 20; i++) {
-        if (data[i] === 0xFF && data[i + 1] === 0xE0) {
-          if (data[i + 4] === 0x4A && data[i + 5] === 0x46 &&
-              data[i + 6] === 0x49 && data[i + 7] === 0x46 && data[i + 8] === 0x00) {
-            data[i + 11] = 1;
-            data[i + 12] = (dpi >> 8) & 0xFF;
-            data[i + 13] = dpi & 0xFF;
-            data[i + 14] = (dpi >> 8) & 0xFF;
-            data[i + 15] = dpi & 0xFF;
-            break;
-          }
+      // Must start with SOI (0xFFD8); otherwise it's not a JPEG we can patch.
+      if (data.length < 4 || data[0] !== 0xFF || data[1] !== 0xD8) {
+        return new Blob([data], { type: "image/jpeg" });
+      }
+
+      // Try to patch an existing JFIF APP0 segment (between SOI and SOS).
+      for (let i = 2; i < data.length - 16; i++) {
+        if (data[i] === 0xFF && data[i + 1] === 0xDA) break; // SOS reached
+        if (data[i] === 0xFF && data[i + 1] === 0xE0 &&
+            data[i + 4] === 0x4A && data[i + 5] === 0x46 &&
+            data[i + 6] === 0x49 && data[i + 7] === 0x46 && data[i + 8] === 0x00) {
+          data[i + 11] = 1; // units = DPI
+          data[i + 12] = (dpi >> 8) & 0xFF;
+          data[i + 13] = dpi & 0xFF;
+          data[i + 14] = (dpi >> 8) & 0xFF;
+          data[i + 15] = dpi & 0xFF;
+          return new Blob([data], { type: "image/jpeg" });
         }
       }
 
-      return new Blob([data], { type: "image/jpeg" });
+      // No JFIF found — inject a fresh APP0 segment immediately after SOI.
+      const jfif = new Uint8Array([
+        0xFF, 0xE0,
+        0x00, 0x10,
+        0x4A, 0x46, 0x49, 0x46, 0x00,
+        0x01, 0x02,
+        0x01,
+        (dpi >> 8) & 0xFF, dpi & 0xFF,
+        (dpi >> 8) & 0xFF, dpi & 0xFF,
+        0x00, 0x00,
+      ]);
+      const out = new Uint8Array(data.length + jfif.length);
+      out.set(data.subarray(0, 2), 0);
+      out.set(jfif, 2);
+      out.set(data.subarray(2), 2 + jfif.length);
+      return new Blob([out], { type: "image/jpeg" });
     }
 
     async function findOptimalQuality(canvas, maxBytes) {
@@ -1775,33 +1803,117 @@
     }
 
     // ==================== File Handling ====================
-    function loadImage(file) {
-      if (!file || !file.type.startsWith("image/")) {
+    const HEIC_RE = /\.(heic|heif)$/i;
+    const HEIC_MIME_RE = /heic|heif/i;
+    let heicConverter = null;
+    let pendingObjectUrl = null;
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load " + src));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function convertHeic(file) {
+      if (!heicConverter) {
+        await loadScript("https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js");
+        heicConverter = window.heic2any;
+        if (!heicConverter) throw new Error("HEIC converter unavailable");
+      }
+      const result = await heicConverter({ blob: file, toType: "image/jpeg", quality: 0.92 });
+      return Array.isArray(result) ? result[0] : result;
+    }
+
+    // Decode a blob to something drawImage accepts. Prefers createImageBitmap with
+    // EXIF orientation; falls back to <img> for older browsers.
+    async function loadBitmap(blob) {
+      if (typeof createImageBitmap === "function") {
+        try {
+          return await createImageBitmap(blob, { imageOrientation: "from-image" });
+        } catch (e) {
+          // Some browsers reject the imageOrientation option; retry without it.
+          try {
+            return await createImageBitmap(blob);
+          } catch (_) { /* fall through to <img> */ }
+        }
+      }
+      return new Promise((resolve, reject) => {
+        if (pendingObjectUrl) URL.revokeObjectURL(pendingObjectUrl);
+        const url = URL.createObjectURL(blob);
+        pendingObjectUrl = url;
+        const img = new Image();
+        img.onload = () => {
+          if (pendingObjectUrl === url) {
+            URL.revokeObjectURL(url);
+            pendingObjectUrl = null;
+          }
+          resolve(img);
+        };
+        img.onerror = () => {
+          if (pendingObjectUrl === url) {
+            URL.revokeObjectURL(url);
+            pendingObjectUrl = null;
+          }
+          reject(new Error("Image decode failed"));
+        };
+        img.src = url;
+      });
+    }
+
+    function checkResolutionWarning() {
+      if (!state.img) return;
+      if (state.baseScale > 1.05) {
+        setStatus(
+          `Photo is lower resolution than ${currentFormat.widthPx}×${currentFormat.heightPx}px target. Output may appear soft.`,
+          "warn"
+        );
+      } else if (statusMsg.classList.contains("warn")) {
+        clearStatus();
+      }
+    }
+
+    async function loadImage(file) {
+      if (!file) return;
+
+      const isHeic = HEIC_RE.test(file.name) || HEIC_MIME_RE.test(file.type);
+      if (!isHeic && !file.type.startsWith("image/")) {
         setStatus("Please select an image file.", "error");
         return;
       }
-
       if (file.size > 10 * 1024 * 1024) {
         setStatus("Image too large. Please use an image under 10MB.", "error");
         return;
       }
 
       clearStatus();
-      showLoading("Loading image...");
+      showLoading(isHeic ? "Converting HEIC..." : "Loading image...");
 
-      const img = new Image();
-      img.onload = () => {
-        state.img = img;
+      try {
+        const blob = isHeic ? await convertHeic(file) : file;
+        const bitmap = await loadBitmap(blob);
+
+        // Release the previous bitmap if it's an ImageBitmap.
+        if (state.img && typeof state.img.close === "function") {
+          state.img.close();
+        }
+
+        state.img = bitmap;
         dropZone.classList.add("has-image");
-        fitImageToCanvas(img);
+        fitImageToCanvas(bitmap);
         hideLoading();
         setStep(2);
-      };
-      img.onerror = () => {
-        setStatus("Could not load image. Please try another file.", "error");
+        checkResolutionWarning();
+      } catch (err) {
         hideLoading();
-      };
-      img.src = URL.createObjectURL(file);
+        const msg = isHeic
+          ? "Could not convert HEIC photo. Please try a JPEG or PNG."
+          : "Could not load image. Please try another file.";
+        setStatus(msg + (err && err.message ? ` (${err.message})` : ""), "error");
+      }
     }
 
     // ==================== Drag & Drop ====================
