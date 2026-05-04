@@ -2115,7 +2115,14 @@
 
         hideLoading();
         showSuccess();
-        setStatus("Photo downloaded successfully!", "success");
+        if (finalBlob.size > MAX_BYTES) {
+          setStatus(
+            `Downloaded — file is ${sizeKB} KB, over the 1 MB target. Try a smaller custom size.`,
+            "warn"
+          );
+        } else {
+          setStatus("Photo downloaded successfully!", "success");
+        }
 
       } catch (err) {
         hideLoading();
