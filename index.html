@@ -24,6 +24,7 @@
        Type: Fraunces (display serif), Inter (body), JetBrains Mono (specs)
        ======================================================== */
     :root {
+      color-scheme: light dark;
       --paper: oklch(0.96 0.012 80);
       --paper-deep: oklch(0.93 0.015 80);
       --surface: oklch(0.99 0.008 80);
@@ -60,6 +61,7 @@
     }
 
     [data-theme="dark"] {
+      color-scheme: dark;
       --paper: oklch(0.18 0.02 268);
       --paper-deep: oklch(0.15 0.02 268);
       --surface: oklch(0.22 0.02 268);
@@ -272,7 +274,7 @@
       flex-direction: column;
       gap: 0.2rem;
       min-height: 78px;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.15s;
       position: relative;
     }
 
@@ -303,6 +305,7 @@
       font-size: 0.65rem;
       letter-spacing: 0.18em;
       color: var(--ink-faint);
+      opacity: 1;
       text-transform: uppercase;
     }
 
@@ -311,6 +314,7 @@
       font-size: 1rem;
       font-weight: 450;
       line-height: 1.15;
+      color: var(--ink);
       font-variation-settings: "opsz" 14;
     }
 
@@ -318,6 +322,7 @@
       font-family: var(--font-mono);
       font-size: 0.68rem;
       color: var(--ink-faint);
+      opacity: 1;
     }
 
     @media (max-width: 640px) {
