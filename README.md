@@ -2,9 +2,21 @@
 
 A free, privacy-focused passport photo maker that runs entirely in your browser. No uploads, no servers, no tracking.
 
-**Live Demo:** [https://soulaflare.github.io/passport-photo-maker](https://soulaflare.github.io/passport-photo-maker)
+**Live Demo:** [https://passportphoto.horizonfall.com](https://passportphoto.horizonfall.com)
 
 **Repository:** [https://github.com/soulaflare/passport-photo-maker](https://github.com/soulaflare/passport-photo-maker)
+
+---
+
+## Screenshots
+
+![Editing view — specimen sheet with face and eye-zone alignment guides (dark mode)](screenshots/editor-dark.png)
+
+| Clean, dependency-free interface | On-photo alignment guides |
+| :---: | :---: |
+| ![Light interface showing format selector and specs](screenshots/hero-light.png) | ![Editor with face oval and eye-zone band](screenshots/editor-light.png) |
+
+> Demo uses a synthetic illustration — your real photo is processed entirely on your device and never leaves the browser.
 
 ---
 
